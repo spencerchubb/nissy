@@ -1,4 +1,7 @@
 doc/*.html
 doc/*.pdf
 nissy
+nissy.dll
+nissy.so
 nissy-*
+__pycache__/
