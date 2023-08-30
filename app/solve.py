@@ -1,6 +1,6 @@
 import ctypes
 from ctypes import CDLL
-# import platform
+import re
 
 # https://pyinstaller.org/en/stable/feature-notes.html
 # According to these PyInstaller docs, ctypes must be used in a specific way.
@@ -31,6 +31,10 @@ class SolveArguments(ctypes.Structure):
         ("opts", ctypes.POINTER(SolveOptions))
     ]
 
+# Replace all whitespace with a single space
+def clean_whitespace(scramble):
+    return re.sub(r"\s+", " ", scramble)
+
 def solve(step_name, scramble, min_moves=1, max_moves=20, max_solutions=1, can_niss=1):
     '''
     step_name: string
@@ -45,6 +49,8 @@ def solve(step_name, scramble, min_moves=1, max_moves=20, max_solutions=1, can_n
 
     nissy.python_solve.argtypes = [SolveArguments]
     nissy.python_solve.restype = ctypes.POINTER(ctypes.c_char_p)
+
+    scramble = clean_whitespace(scramble)
 
     solve_args = SolveArguments(
         step_name.encode(),
