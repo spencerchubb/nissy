@@ -52,13 +52,13 @@ python_exec(char* line) {
 	free(shell_argv);
 }
 
-// Impelement getStep function
 Step* getStep(char* stepName) {
     for (int i = 0; steps[i] != NULL; i++) {
         if (strcmp(stepName, steps[i]->shortname) == 0) {
             return steps[i];
         }
     }
+    return NULL;
 }
 
 /* Similar to print_alg defined in alg.c except this returns a string */
@@ -141,8 +141,12 @@ python_solve(SolveArgs solveArgs) {
     // printf("print_number: %d\n", opts->print_number);
     // printf("count_only: %d\n", opts->count_only);
 
-
     Step *step = getStep(stepName);
+    if (step == NULL) {
+        printf("Error: Step '%s' not found\n", stepName);
+        return NULL;
+    }
+
     Alg *scramble = new_alg(scrambleString);
 
 	init_all_movesets();

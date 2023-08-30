@@ -1,4 +1,5 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template_string, request
+from index import index_html
 from solve import solve
 
 app = Flask(__name__)
@@ -15,9 +16,12 @@ def index():
 
         solutions = solve(step_name, scramble, min_moves, max_moves, max_solutions, can_niss)
         
-        return render_template('index.html', solutions=solutions)
+        return render_template_string(index_html, solutions=solutions)
 
-    return render_template('index.html')
+    # Ideally we would use render_template instead of render_template_string.
+    # However, I couldn't get it to work with pyinstaller to create an executable.
+    # If we ever figure out how to make that work, we can switch to render_template.
+    return render_template_string(index_html)
 
 if __name__ == '__main__':
     app.run(debug=True)

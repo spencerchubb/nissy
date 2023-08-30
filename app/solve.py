@@ -1,13 +1,14 @@
 import ctypes
-import platform
+from ctypes import CDLL
+# import platform
 
-print("Detected platform: " + platform.uname()[0])
-if platform.uname()[0] == "Windows":
-    nissy = ctypes.CDLL("./nissy.dll")
-elif platform.uname()[0] == "Linux" or platform.uname()[0] == "Mac":
-    nissy = ctypes.CDLL("./nissy.so")
-else:
-    print("Unknown platform: " + platform.uname()[0])
+# https://pyinstaller.org/en/stable/feature-notes.html
+# According to these PyInstaller docs, ctypes must be used in a specific way.
+# - Cannot use ctypes.CDLL but can import CDLL and use it that way
+# - Only libraries referenced by bare filenames (e.g. no leading paths) will be handled
+# - Only library paths represented by a literal string will be detected
+
+nissy = CDLL("nissy.so")
 
 class SolveOptions(ctypes.Structure):
     _fields_ = [
