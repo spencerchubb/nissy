@@ -6,6 +6,13 @@ index_html = '''
     <title>Nissy Web Interface</title>
 
     <style>
+        body {
+            max-width: 800px;
+            width: 100%;
+            margin: auto;
+            padding-bottom: 32px;
+        }
+
         p, li, label, button, input, textarea, select {
             font-size: 1rem;
             font-family: sans-serif;
@@ -39,6 +46,12 @@ index_html = '''
 
         button[type="submit"]:hover {
             background-color: #0056b3;
+        }
+
+        .divider {
+            border-top: dashed 3px #bbb;
+            width: 100%;
+            margin: 48px 0;
         }
     </style>
 
@@ -95,8 +108,19 @@ index_html = '''
             "corners-URF": "Solve corners (URF moveset)"
         };
 
+        let scrambleTypes = [
+            "normal",
+            "eo",
+            "dr",
+            "htr",
+            "corners",
+            "edges",
+            "fmc",
+        ];
+
         function loadFormValues() {
             const stepSelect = document.querySelector('[name="step_name"]');
+            const scrambleTypeSelect = document.querySelector('[name="scramble_type"]');
 
             stepSelect.value = localStorage.getItem('step_name') || '';
             document.querySelector('[name="scramble"]').value = localStorage.getItem('scramble') || '';
@@ -104,6 +128,7 @@ index_html = '''
             document.querySelector('[name="max_moves"]').value = localStorage.getItem('max_moves') || 20;
             document.querySelector('[name="max_solutions"]').value = localStorage.getItem('max_solutions') || 1;
             document.querySelector('[name="can_niss"]').checked = localStorage.getItem('can_niss') === 'true';
+            scrambleTypeSelect.value = localStorage.getItem('scramble_type') || '';
 
             // Load and populate step_name select options
             for (const stepKey in steps) {
@@ -116,6 +141,18 @@ index_html = '''
             if (savedStep) {
                 stepSelect.value = savedStep;
             }
+
+            // Load and populate scramble_type select options
+            for (const scrambleType of scrambleTypes) {
+                const option = document.createElement('option');
+                option.value = scrambleType;
+                option.text = scrambleType;
+                scrambleTypeSelect.appendChild(option);
+            }
+            const savedScrambleType = localStorage.getItem('scramble_type');
+            if (savedScrambleType) {
+                scrambleTypeSelect.value = savedScrambleType;
+            }
         }
 
         // Function to save form values to local storage
@@ -126,6 +163,7 @@ index_html = '''
             localStorage.setItem('max_moves', document.querySelector('[name="max_moves"]').value);
             localStorage.setItem('max_solutions', document.querySelector('[name="max_solutions"]').value);
             localStorage.setItem('can_niss', document.querySelector('[name="can_niss"]').checked);
+            localStorage.setItem('scramble_type', document.querySelector('[name="scramble_type"]').value);
         }
     </script>
 </head>
@@ -139,7 +177,10 @@ index_html = '''
     <p>
         See <a href="https://github.com/spencerchubb/nissy">the github repo</a> for the code and technical details.
     </p>
+
     <form method="post" onchange="saveFormValues()">
+        <input type="hidden" name="solve">
+
         <label for="step_name">Step Name:</label>
         <select name="step_name" required></select>
 
@@ -168,6 +209,22 @@ index_html = '''
         <li>{{ solution }}</li>
         {% endfor %}
     </ul>
+    {% endif %}
+
+    <div class="divider"></div>
+
+    <form method="post" onchange="saveFormValues()">
+        <input type="hidden" name="get_scramble">
+
+        <label for="scramble_type">Scramble Type:</label>
+        <select name="scramble_type" required></select>
+
+        <button type="submit">Scramble</button>
+    </form>
+
+    {% if scramble %}
+    <h2>Scramble:</h2>
+    <p>{{ scramble }}</p>
     {% endif %}
 </body>
 

@@ -1,3 +1,4 @@
+// #include "commands.c"
 #include "shell.h"
 
 /* Functions that are designed to be called in python */
@@ -32,25 +33,25 @@ parseline(char *line, char **v)
 }
 
 /* Based on 'launch' from shell.c */
-void
-python_exec(char* line) {
-    int i, shell_argc;
-    char **shell_argv;
+// void
+// python_exec(char* line) {
+//     int i, shell_argc;
+//     char **shell_argv;
 
-	shell_argv = malloc(MAXNTOKENS * sizeof(char *));
-	for (i = 0; i < MAXNTOKENS; i++)
-		shell_argv[i] = malloc((MAXTOKENLEN+1) * sizeof(char));
+// 	shell_argv = malloc(MAXNTOKENS * sizeof(char *));
+// 	for (i = 0; i < MAXNTOKENS; i++)
+// 		shell_argv[i] = malloc((MAXTOKENLEN+1) * sizeof(char));
 
-    shell_argc = parseline(line, shell_argv);
+//     shell_argc = parseline(line, shell_argv);
 
-    if (shell_argc > 0) {
-        exec_args(shell_argc, shell_argv);
-    }
+//     if (shell_argc > 0) {
+//         exec_args(shell_argc, shell_argv);
+//     }
 
-	for (i = 0; i < MAXNTOKENS; i++)
-		free(shell_argv[i]);
-	free(shell_argv);
-}
+// 	for (i = 0; i < MAXNTOKENS; i++)
+// 		free(shell_argv[i]);
+// 	free(shell_argv);
+// }
 
 Step* getStep(char* stepName) {
     for (int i = 0; steps[i] != NULL; i++) {
@@ -88,11 +89,14 @@ alg_to_string(Alg *alg) {
     if (niss)
         strcat(result, ")");
 
+    return result;
+}
+
+char*
+append_len(Alg *alg, char *alg_string) {
     char len_str[10];
     snprintf(len_str, sizeof(len_str), " (%d)", alg->len);
-    strcat(result, len_str);
-
-    return result;
+    strcat(alg_string, len_str);
 }
 
 /* Similar to print_alglist defined in alg.c except it returns a list of strings */
@@ -103,6 +107,7 @@ alglist_to_strings(AlgList *alglist) {
     int resultLen = 0;
     for (AlgListNode *i = alglist->first; i != NULL; i = i->next, resultLen++) {
         char *alg_string = alg_to_string(i->alg);
+        append_len(i->alg, alg_string);
         result[resultLen] = alg_string;
     }
 
@@ -159,4 +164,109 @@ python_solve(SolveArgs solveArgs) {
     // We would have to use ctypes to define AlgList, AlgNode, Alg, Move, and maybe even more structs.
     // That is why we are just returning strings.
     return alglist_to_strings(alglist);
+}
+
+/* Based on 'scramble_exec' from commands.c */
+char*
+python_scramble(char *scrtype) {
+    Cube cube;
+	CubeArray *arr;
+	Alg *scr, *ruf, *aux;
+	int i, j, eo, ep, co, cp, a[12];
+	int eparr[12] = { [8] = 8, [9] = 9, [10] = 10, [11] = 11 };
+	uint64_t ui, uj, uk;
+
+	init_all_movesets();
+	init_symcoord();
+
+	srand(time(NULL));
+
+    if (!strcmp(scrtype, "dr")) {
+        /* Warning: cube is inconsistent because of side CO  *
+            * and EO on U/D. But solve_2phase only solves drfin *
+            * in this case, so it should be ok.                 *
+            * TODO: check this properly                         *
+            * Moreover we again need to fix parity after        *
+            * generating epose manually                         */
+        do {
+            ui = rand() % FACTORIAL8;
+            uj = rand() % FACTORIAL8;
+            uk = rand() % FACTORIAL4;
+
+            index_to_perm(ui, 8, eparr);
+            arr = malloc(sizeof(CubeArray));
+            arr->ep = eparr;
+            cube = arrays_to_cube(arr, pf_ep);
+            free(arr);
+
+            cube.cp = uj;
+            cube.epose = uk;
+        } while (!is_admissible(cube));
+    } else if (!strcmp(scrtype, "htr")) {
+        /* antindex_htrfin() returns a consistent *
+            * cube, except possibly for parity       */
+        do {
+            ui = rand() % (24*24/6);
+            cube = (Cube){0};
+            cube.cp = cornershtrfin_ant[ui];
+            cube.epose = rand() % 24;
+            cube.eposs = rand() % 24;
+            cube.eposm = rand() % 24;
+        } while (!is_admissible(cube));
+    } else {
+        eo = rand() % POW2TO11;
+        ep = rand() % FACTORIAL12;
+        co = rand() % POW3TO7;
+        cp = rand() % FACTORIAL8;
+
+        if (!strcmp(scrtype, "eo")) {
+            eo = 0;
+        } else if (!strcmp(scrtype, "corners")) {
+            eo = 0;
+            ep = 0;
+            index_to_perm(cp, 8, a);
+            if (perm_sign(a, 8) == 1) {
+                swap(&a[0], &a[1]);
+                cp = perm_to_index(a, 8);
+            }
+        } else if (!strcmp(scrtype, "edges")) {
+            co = 0;
+            cp = 0;
+            index_to_perm(ep, 12, a);
+            if (perm_sign(a, 12) == 1) {
+                swap(&a[0], &a[1]);
+                ep = perm_to_index(a, 12);
+            }
+        }
+        cube = fourval_to_cube(eo, ep, co, cp);
+    }
+
+    /* TODO: can be optimized for htr and dr using htrfin, drfin */
+    scr = solve_2phase(cube, 1);
+
+    if (!strcmp(scrtype, "fmc")) {
+        aux = new_alg("");
+        copy_alg(scr, aux);
+        /* Trick to rufify for free: rotate the scramble  *
+            * so that it does not start with F or end with R */
+        for (j = 0; j < NROTATIONS; j++) {
+            if (base_move(scr->move[0]) != F &&
+                base_move(scr->move[0]) != B &&
+                base_move(scr->move[scr->len-1]) != R &&
+                base_move(scr->move[scr->len-1]) != L)
+                break;
+            copy_alg(aux, scr);
+            transform_alg(j, scr);
+        }
+        copy_alg(scr, aux);
+        ruf = new_alg("R' U' F");
+        copy_alg(ruf, scr);
+        compose_alg(scr, aux);
+        compose_alg(scr, ruf);
+        free_alg(aux);
+        free_alg(ruf);
+    }
+    char *alg_string = alg_to_string(scr);
+    free_alg(scr);
+    return alg_string;
 }

@@ -35,6 +35,14 @@ class SolveArguments(ctypes.Structure):
 def clean_whitespace(scramble):
     return re.sub(r"\s+", " ", scramble)
 
+def decode_strings(result):
+    solutions = []
+    index = 0
+    while result[index] != None:
+        solutions.append(result[index].decode("utf-8"))
+        index += 1
+    return solutions
+
 def solve(step_name, scramble, min_moves=1, max_moves=20, max_solutions=1, can_niss=1):
     '''
     step_name: string
@@ -71,20 +79,4 @@ def solve(step_name, scramble, min_moves=1, max_moves=20, max_solutions=1, can_n
     
     result = nissy.python_solve(solve_args)
 
-    solutions = []
-    index = 0
-    while result[index] != None:
-        solutions.append(result[index].decode("utf-8"))
-        index += 1
-    
-    return solutions
-
-# solutions = solve(
-#     "eo",
-#     "U2 R' U2 L' B2 U' D B F2 U' F2 D2 R2 B2 D2 L2 U B2 D'",
-#     min_moves=1,
-#     max_moves=5,
-#     max_solutions=20,
-#     can_niss=1,
-# )
-# print(solutions)
+    return decode_strings(result)
