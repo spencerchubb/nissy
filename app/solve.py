@@ -88,7 +88,8 @@ def findable_finish_from_dr(scramble, max_solutions=1, can_niss=1):
     htr_solutions = solve('htr', scramble, max_solutions=max_solutions, can_niss=can_niss)
     solutions = []
     for htr_solution in htr_solutions:
-        left_paren = htr_solution.find('(')
+        # Get the last instance of '(' to find when the alg ends
+        left_paren = htr_solution.rfind('(')
 
         alg = htr_solution[:left_paren - 1]
 
