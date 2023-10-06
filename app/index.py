@@ -57,6 +57,7 @@ index_html = '''
             "dr": "DR",
             "htr": "HTR from DR",
             "optimal": "Optimal Finish",
+            "findable_dr": "Findable Finish from DR",
         };
 
         let scrambleTypes = [

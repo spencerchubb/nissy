@@ -55,6 +55,9 @@ def solve(step_name, scramble, min_moves=1, max_moves=20, max_solutions=1, can_n
     can_niss: int
     '''
 
+    if step_name == 'findable_dr':
+        return findable_finish_from_dr(scramble, max_solutions, can_niss)
+
     nissy.python_solve.argtypes = [SolveArguments]
     nissy.python_solve.restype = ctypes.POINTER(ctypes.c_char_p)
 
@@ -80,3 +83,21 @@ def solve(step_name, scramble, min_moves=1, max_moves=20, max_solutions=1, can_n
     result = nissy.python_solve(solve_args)
 
     return decode_strings(result)
+
+def findable_finish_from_dr(scramble, max_solutions=1, can_niss=1):
+    htr_solutions = solve('htr', scramble, max_solutions=max_solutions, can_niss=can_niss)
+    solutions = []
+    for htr_solution in htr_solutions:
+        left_paren = htr_solution.find('(')
+
+        alg = htr_solution[:left_paren - 1]
+
+        finish = solve(
+            'optimal',
+            scramble + ' ' + alg,
+            max_solutions=1,
+            can_niss=can_niss)
+        
+        solutions.append(htr_solution + ' ➡ ' + finish[0])
+        
+    return solutions
