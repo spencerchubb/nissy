@@ -15,3 +15,6 @@ pyinstaller ./app/main.py \
     --name nissy-$os.exe \
     --onefile \
     --add-binary "nissy.so$pathsep/"
+
+# Remove the shared library to ensure that the executable is standalone
+rm nissy.so
