@@ -24,10 +24,6 @@ index_html = '''
             grid-gap: 16px;
         }
 
-        label {
-            grid-column: 1 / 2;
-        }
-
         input[type="checkbox"] {
             width: 1rem;
             height: 1rem;
@@ -57,55 +53,10 @@ index_html = '''
 
     <script>
         let steps = {
-            "optimal": "Optimal solve (in HTM)",
-            "light": "Optimal solve (in HTM), small table (500Mb RAM total)",
-            "eofin": "Optimal solve after EO without breaking EO (detected)",
-            "eofbfin": "Optimal after EO on F/B without breaking EO",
-            "eorlfin": "Optimal after EO on R/L without breaking EO",
-            "eoudfin": "Optimal after EO on U/D without breaking EO",
-            "eo": "EO on any axis",
-            "eofb": "EO on F/B",
-            "eorl": "EO on R/L",
-            "eoud": "EO on U/D",
-            "co": "CO on any axis",
-            "coud": "CO on U/D",
-            "corl": "CO on R/L",
-            "cofb": "CO on F/B",
-            "co-URF": "CO any axis (URF moveset)",
-            "coud-URF": "CO on U/D (URF moveset)",
-            "corl-URF": "CO on R/L (URF moveset)",
-            "cofb-URF": "CO on F/B (URF moveset)",
-            "dr": "DR on any axis",
-            "drud": "DR on U/D",
-            "drrl": "DR on R/L",
-            "drfb": "DR on F/B",
-            "dr-eo": "DR without breaking EO (automatically detected)",
-            "dr-eofb": "DR on U/D or R/L without breaking EO on F/B",
-            "dr-eorl": "DR on U/D or F/B without breaking EO on R/L",
-            "dr-eoud": "DR on R/L or F/B without breaking EO on U/D",
-            "drud-eofb": "DR on U/D without breaking EO on F/B",
-            "drrl-eofb": "DR on R/L without breaking EO on F/B",
-            "drud-eorl": "DR on U/D without breaking EO on R/L",
-            "drfb-eorl": "DR on F/B without breaking EO on R/L",
-            "drfb-eoud": "DR on F/B without breaking EO on U/D",
-            "drrl-eoud": "DR on R/L without breaking EO on U/D",
-            "drfin": "DR finish on any axis without breaking DR",
-            "drudfin": "DR finish on U/D without breaking DR",
-            "drrlfin": "DR finish on R/L without breaking DR",
-            "drfbfin": "DR finish on F/B without breaking DR",
+            "eo": "EO",
+            "dr": "DR",
             "htr": "HTR from DR",
-            "htr-drud": "HTR from DR on U/D",
-            "htr-drrl": "HTR from DR on R/L",
-            "htr-drfb": "HTR from DR on F/B",
-            "corners-dr": "Solve corners from DR",
-            "corners-drud": "Solve corners from DR on U/D",
-            "corners-drrl": "Solve corners from DR on R/L",
-            "corners-drfb": "Solve corners from DR on F/B",
-            "htrfin": "HTR finish without breaking HTR",
-            "chtr": "Solve corners to HTR state",
-            "chtr-URF": "Solve corners to HTR state (URF moveset)",
-            "corners": "Solve corners",
-            "corners-URF": "Solve corners (URF moveset)"
+            "optimal": "Optimal Finish",
         };
 
         let scrambleTypes = [
@@ -185,7 +136,7 @@ index_html = '''
         <select name="step_name" required></select>
 
         <label for="scramble">Scramble:</label>
-        <textarea type="text" name="scramble" required></textarea>
+        <textarea type="text" name="scramble" rows="5" required></textarea>
 
         <label for="min_moves">Min Moves:</label>
         <input type="number" name="min_moves" min="1" max="20" required>

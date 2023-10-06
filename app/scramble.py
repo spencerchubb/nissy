@@ -1,7 +1,7 @@
 import ctypes
 from ctypes import CDLL
 
-nissy = CDLL("./nissy.so")
+nissy = CDLL("nissy.so")
 
 def get_scramble(type):
     '''
