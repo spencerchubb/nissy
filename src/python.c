@@ -140,7 +140,7 @@ python_solve(SolveArgs solveArgs) {
     // printf("max_solutions: %d\n", opts->max_solutions);
     // printf("nthreads: %d\n", opts->nthreads);
     // printf("optimal: %d\n", opts->optimal);
-    // printf("can_niss: %d\n", opts->can_niss);
+    printf("niss_type: %d\n", opts->nisstype);
     // printf("verbose: %d\n", opts->verbose);
     // printf("all: %d\n", opts->all);
     // printf("print_number: %d\n", opts->print_number);

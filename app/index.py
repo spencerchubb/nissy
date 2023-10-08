@@ -56,8 +56,15 @@ index_html = '''
             "eo": "EO",
             "dr": "DR",
             "htr": "HTR from DR",
-            "optimal": "Optimal Finish",
-            "findable_dr": "Findable Finish from DR",
+            "drfin": "Leave slice from DR",
+            "htrfin": "Finish from HTR",
+            "findable_dr": "Findable finish from DR",
+        };
+
+        let nissTypes = {
+            "Normal": 0,
+            "Linear": 1,
+            "Niss": 2,
         };
 
         let scrambleTypes = [
@@ -72,15 +79,17 @@ index_html = '''
 
         function loadFormValues() {
             const stepSelect = document.querySelector('[name="step_name"]');
+            const nissTypeSelect = document.querySelector('[name="nisstype"]');
             const scrambleTypeSelect = document.querySelector('[name="scramble_type"]');
 
-            stepSelect.value = localStorage.getItem('step_name') || '';
+            stepSelect.value = localStorage.getItem('step_name') || ''; // TODO: needed?
             document.querySelector('[name="scramble"]').value = localStorage.getItem('scramble') || '';
             document.querySelector('[name="min_moves"]').value = localStorage.getItem('min_moves') || 1;
             document.querySelector('[name="max_moves"]').value = localStorage.getItem('max_moves') || 20;
             document.querySelector('[name="max_solutions"]').value = localStorage.getItem('max_solutions') || 1;
-            document.querySelector('[name="can_niss"]').checked = localStorage.getItem('can_niss') === 'true';
-            scrambleTypeSelect.value = localStorage.getItem('scramble_type') || '';
+            document.querySelector('[name="nisstype"]').checked = localStorage.getItem('nisstype') === 'true';
+            nissTypeSelect.value = localStorage.getItem('nisstype') || ''; // TODO: needed?
+            scrambleTypeSelect.value = localStorage.getItem('scramble_type') || ''; // TODO: needed?
 
             // Load and populate step_name select options
             for (const stepKey in steps) {
@@ -92,6 +101,18 @@ index_html = '''
             const savedStep = localStorage.getItem('step_name');
             if (savedStep) {
                 stepSelect.value = savedStep;
+            }
+
+            // Load and populate nisstype select options
+            for (const nissTypeKey in nissTypes) {
+                const option = document.createElement('option');
+                option.value = nissTypes[nissTypeKey];
+                option.text = nissTypeKey;
+                nissTypeSelect.appendChild(option);
+            }
+            const savedNissType = localStorage.getItem('nisstype');
+            if (savedNissType) {
+                nissTypeSelect.value = savedNissType;
             }
 
             // Load and populate scramble_type select options
@@ -114,7 +135,7 @@ index_html = '''
             localStorage.setItem('min_moves', document.querySelector('[name="min_moves"]').value);
             localStorage.setItem('max_moves', document.querySelector('[name="max_moves"]').value);
             localStorage.setItem('max_solutions', document.querySelector('[name="max_solutions"]').value);
-            localStorage.setItem('can_niss', document.querySelector('[name="can_niss"]').checked);
+            localStorage.setItem('nisstype', document.querySelector('[name="nisstype"]').value);
             localStorage.setItem('scramble_type', document.querySelector('[name="scramble_type"]').value);
         }
     </script>
@@ -148,8 +169,8 @@ index_html = '''
         <label for="max_solutions">Max Solutions:</label>
         <input type="number" name="max_solutions" min="1" required>
 
-        <label for="can_niss">Can Niss:</label>
-        <input type="checkbox" name="can_niss">
+        <label for="nisstype">Niss Type:</label>
+        <select name="nisstype" required></select>
 
         <button type="submit">Solve</button>
     </form>

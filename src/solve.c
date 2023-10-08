@@ -97,7 +97,7 @@ dfs(DfsArg *arg)
 		invert_branch(arg);
 	dfs_branch(arg);
 
-	if (arg->opts->can_niss && !arg->niss && niss_makes_sense(arg))
+	if (arg->opts->nisstype == NISS && !arg->niss && niss_makes_sense(arg))
 		dfs_niss(arg);
 
 	if (sw)
@@ -193,7 +193,7 @@ dfs_stop(DfsArg *arg)
 	bool b;
 
 	lowerbound = arg->step->estimate(arg);
-	if (arg->opts->can_niss && !arg->niss)
+	if (arg->opts->nisstype == NISS && !arg->niss)
 		lowerbound = MIN(1, lowerbound);
 
 	if (arg->current_alg->len + lowerbound > arg->d) {
@@ -330,7 +330,7 @@ multidfs(Cube c, Trans tr, Step *s, SolveOptions *opts, AlgList *sols, int d)
 		alg = new_alg("");
 		append_move(alg, s->moveset->sorted_moves[i], false);
 		append_alg(start, alg);
-		if (opts->can_niss) {
+		if (opts->nisstype == NISS || opts->nisstype == LINEAR) {
 			alg->inv[0] = true;
 			append_alg(start, alg);
 		}
@@ -390,6 +390,7 @@ solve(Cube cube, Step *step, SolveOptions *opts)
 {
 	bool ready;
 	int i, d, op, nt;
+	Alg *algaux;
 	AlgList *sols;
 	Cube c;
 	Trans tt[NTRANS];
@@ -417,7 +418,9 @@ solve(Cube cube, Step *step, SolveOptions *opts)
 		for (i = 0; i < nt; i++) {
 			c = apply_trans(tt[i], cube);
 			if (step->is_done(c)) {
-				append_alg(sols, new_alg(""));
+				algaux = new_alg("");
+				append_alg(sols, algaux);
+				free_alg(algaux);
 				return sols;
 			}
 		}
@@ -455,7 +458,7 @@ solve_2phase(Cube cube, int nthreads)
 	opts1.max_solutions = 20;
 	opts1.nthreads      = nthreads;
 	opts1.optimal       = 3;
-	opts1.can_niss      = false;
+	opts1.nisstype      = NORMAL;
 	opts1.verbose       = false;
 	opts1.all           = true;
 
@@ -463,7 +466,7 @@ solve_2phase(Cube cube, int nthreads)
 	opts2.max_moves     = 19;
 	opts2.max_solutions = 1;
 	opts2.nthreads      = nthreads;
-	opts2.can_niss      = false;
+	opts2.nisstype      = NORMAL;
 	opts2.verbose       = false;
 
 	/* We skip step1 if it is solved on any axis */

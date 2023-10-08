@@ -16,9 +16,9 @@ def index():
             min_moves = int(request.form.get('min_moves'))
             max_moves = int(request.form.get('max_moves'))
             max_solutions = int(request.form.get('max_solutions'))
-            can_niss = bool(request.form.get('can_niss'))
+            nisstype = int(request.form.get('nisstype'))
 
-            solutions = solve(step_name, scramble, min_moves, max_moves, max_solutions, can_niss)
+            solutions = solve(step_name, scramble, min_moves, max_moves, max_solutions, nisstype)
             return render_template_string(index_html, solutions=solutions)
         elif request.form.get('get_scramble') != None:
             scramble_type = request.form.get('scramble_type')
