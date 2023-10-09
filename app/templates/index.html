@@ -2,25 +2,31 @@
 <html>
 
 <head>
-    <title>Nissy Web Interface</title>
+    <meta name="description" content="Online version of nissy. An FMC tool for finding good EOs, DRs, and HTRs.">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nissy Online</title>
 
     <style>
+        html {
+            background-color: var(--gray-800);
+        }
+
         body {
             max-width: 800px;
             width: 100%;
             margin: auto;
-            padding-bottom: 32px;
-        }
-
-        p, li, label, button, input, textarea, select {
-            font-size: 1rem;
-            font-family: sans-serif;
+            padding-bottom: 96px;
         }
 
         form {
             display: grid;
             grid-template-columns: auto 1fr;
-            grid-gap: 16px;
+            grid-gap: 24px 16px;
+            align-items: baseline;
+        }
+
+        button[type="submit"] {
+            grid-column: 1 / -1;
         }
 
         input[type="checkbox"] {
@@ -29,24 +35,199 @@
             margin: 0;
         }
 
-        button[type="submit"] {
-            grid-column: 1 / 3;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            cursor: pointer;
-            padding: 8px 16px;
-            border-radius: 4px;
-        }
-
-        button[type="submit"]:hover {
-            background-color: #0056b3;
-        }
-
         .divider {
             border-top: dashed 3px #bbb;
             width: 100%;
             margin: 48px 0;
+        }
+    </style>
+
+    <!-- CubingApp styles -->
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: Verdana, sans-serif;
+        }
+
+        html {
+            width: 100%;
+            height: 100%;
+            font-family: Verdana, sans-serif;
+            overflow: auto;
+        }
+
+        p,
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6,
+        li,
+        label {
+            margin: 0;
+            padding: 0;
+            color: var(--gray-100);
+        }
+
+        p, li {
+            font-size: 1rem;
+            line-height: 1.4rem;
+        }
+
+        ul,
+        ol {
+            margin: 0;
+        }
+
+        a {
+            text-decoration: inherit;
+        }
+
+        input,
+        select {
+            margin: 0;
+            font-size: 1rem;
+        }
+
+        input,
+        select,
+        textarea {
+            font-size: 1rem;
+            padding: 6px;
+            background: var(--gray-800);
+            color: var(--gray-100);
+            outline: solid 1px var(--gray-400);
+            border: none;
+            border-radius: 8px;
+            box-shadow: 0 0 4px 2px var(--gray-600);
+            transition: all 0.15s ease-in-out;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: solid 1px var(--gray-300);
+            box-shadow: 0 0 4px 2px var(--lightBlue-300);
+        }
+
+        input[type="checkbox"] {
+            outline: none;
+            box-shadow: none;
+        }
+
+        input::-moz-placeholder,
+        input:-moz-placeholder,
+        input::-webkit-input-placeholder,
+        input:-ms-input-placeholder,
+        textarea::-moz-placeholder,
+        textarea:-moz-placeholder,
+        textarea::-webkit-input-placeholder,
+        textarea:-ms-input-placeholder {
+            color: var(--gray-400);
+        }
+
+        table {
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            border-bottom: solid 1px var(--gray-500);
+            padding: 8px 16px 8px 8px;
+            color: white;
+            text-align: left;
+            white-space: nowrap;
+        }
+
+        svg {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        nav {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            width: 100%;
+            min-height: 48px;
+            height: 48px;
+            border-bottom: solid 1px var(--gray-600);
+        }
+
+        button {
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            color: #fff;
+            font-family: Verdana, sans-serif;
+            font-size: 1rem;
+            border: none;
+            background-color: var(--blue-600);
+            text-align: center;
+            transition: all 0.15s ease-in-out;
+        }
+
+        button:hover {
+            cursor: pointer;
+            background-color: var(--blue-800);
+        }
+
+        button:disabled {
+            background-color: var(--gray-500);
+            cursor: not-allowed;
+        }
+
+        .link {
+            color: var(--lightBlue-500);
+        }
+
+        .link:hover {
+            text-decoration: underline;
+            cursor: pointer;
+        }
+
+        .row {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+        }
+
+        .col {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        * {
+            --blue-50: #eff6ff;
+            --blue-100: #dbeafe;
+            --blue-200: #bfdbfe;
+            --blue-300: #93c5fd;
+            --blue-400: #60a5fa;
+            --blue-500: #3b82f6;
+            --blue-600: #2563eb;
+            --blue-700: #1d4ed8;
+            --blue-800: #1e40af;
+            --blue-900: #1e3a8a;
+            --lightBlue-50: #f0f9ff;
+            --lightBlue-100: #e0f2fe;
+            --lightBlue-200: #bae6fd;
+            --lightBlue-300: #7dd3fc;
+            --lightBlue-400: #38bdf8;
+            --lightBlue-500: #0ea5e9;
+            --lightBlue-600: #0284c7;
+            --lightBlue-700: #0369a1;
+            --lightBlue-800: #075985;
+            --lightBlue-900: #0c4a6e;
+            --gray-50: #fafafa;
+            --gray-100: #f4f4f5;
+            --gray-200: #e4e4e7;
+            --gray-300: #d4d4d8;
+            --gray-400: #a1a1aa;
+            --gray-500: #71717a;
+            --gray-600: #52525b;
+            --gray-700: #3f3f46;
+            --gray-800: #27272a;
+            --gray-900: #18181b;
         }
     </style>
 
@@ -81,14 +262,10 @@
             const nissTypeSelect = document.querySelector('[name="nisstype"]');
             const scrambleTypeSelect = document.querySelector('[name="scramble_type"]');
 
-            stepSelect.value = localStorage.getItem('step_name') || ''; // TODO: needed?
             document.querySelector('[name="scramble"]').value = localStorage.getItem('scramble') || '';
             document.querySelector('[name="min_moves"]').value = localStorage.getItem('min_moves') || 1;
             document.querySelector('[name="max_moves"]').value = localStorage.getItem('max_moves') || 20;
             document.querySelector('[name="max_solutions"]').value = localStorage.getItem('max_solutions') || 1;
-            document.querySelector('[name="nisstype"]').checked = localStorage.getItem('nisstype') === 'true';
-            nissTypeSelect.value = localStorage.getItem('nisstype') || ''; // TODO: needed?
-            scrambleTypeSelect.value = localStorage.getItem('scramble_type') || ''; // TODO: needed?
 
             // Load and populate step_name select options
             for (const stepKey in steps) {
@@ -141,42 +318,35 @@
 </head>
 
 <body onload="loadFormValues()">
-    <h1>Nissy Web Interface</h1>
-    <p>
-        This is an easy web interface for the nissy tool pioneered by Sebastiano Tronto.
-        Nissy is an FMC tool that helps you find EOs, DRs, and HTRs.
-    </p>
-    <p>
-        See <a href="https://github.com/spencerchubb/nissy">the github repo</a> for the code and technical details.
-    </p>
+    <h1 style="margin-top: 2rem;">Nissy Online</h1>
 
-    <form method="post" onchange="saveFormValues()">
+    <form method="post" onchange="saveFormValues()" style="margin-top: 2rem;">
         <input type="hidden" name="solve">
 
-        <label for="step_name">Step Name:</label>
+        <p>Step Name:</p>
         <select name="step_name" required></select>
 
-        <label for="scramble">Scramble:</label>
+        <p>Scramble:</p>
         <textarea type="text" name="scramble" rows="5" required></textarea>
 
-        <label for="min_moves">Min Moves:</label>
+        <p>Min Moves:</p>
         <input type="number" name="min_moves" min="1" max="20" required>
 
-        <label for="max_moves">Max Moves:</label>
+        <p>Max Moves:</p>
         <input type="number" name="max_moves" min="1" max="20" required>
 
-        <label for="max_solutions">Max Solutions:</label>
+        <p>Max Solutions:</p>
         <input type="number" name="max_solutions" min="1" required>
 
-        <label for="nisstype">Niss Type:</label>
+        <p>Niss Type:</p>
         <select name="nisstype" required></select>
 
         <button type="submit">Solve</button>
     </form>
 
     {% if solutions %}
-    <h2>Solutions:</h2>
-    <ul>
+    <h2 style="margin-top: 1rem;">Solutions:</h2>
+    <ul style="margin-top: 1rem;">
         {% for solution in solutions %}
         <li>{{ solution }}</li>
         {% endfor %}
@@ -188,16 +358,60 @@
     <form method="post" onchange="saveFormValues()">
         <input type="hidden" name="get_scramble">
 
-        <label for="scramble_type">Scramble Type:</label>
+        <p>Scramble Type:</p>
         <select name="scramble_type" required></select>
 
         <button type="submit">Scramble</button>
     </form>
 
     {% if scramble %}
-    <h2>Scramble:</h2>
-    <p>{{ scramble }}</p>
+    <h2 style="margin-top: 1rem;">Scramble:</h2>
+    <p style="margin-top: 1rem;">{{ scramble }}</p>
     {% endif %}
+
+    <div class="about-div">
+        <style>
+            .about-div h2 {
+                margin: 3rem auto 0 auto;
+                max-width: 600px;
+            }
+
+            .about-div p {
+                margin: 1rem auto 0 auto;
+                max-width: 600px;
+            }
+        </style>
+
+        <h2>What is Nissy Online?</h2>
+        <p>
+            Nissy Online is an online version of nissy.
+        </p>
+        <p>
+            Now you no longer have to generate or download massive tables to use nissy.
+            This website also provides a much more intuitive interface.
+        </p>
+        <h2>What is Nissy?</h2>
+        <p>
+            Nissy is a tool for the Fewest Moves Challenge (FMC).
+            It helps you find good EOs, DRs, and HTRs while using niss.
+        </p>
+        <p>
+            NISS stands for Normal Inverse Scramble Switch, and it is a very common technique for FMC.
+            This tool is essentially a Rubik's Cube solver that can get you to a given state using niss.
+        </p>
+        <p>
+            Sebastiano Tronto created the original nissy that this website is based on.
+            You can learn more <a href="https://nissy.tronto.net/" class="link">here</a>.
+        </p>
+        <h2>Who should use Nissy Online?</h2>
+        <p>
+            Nissy Online is helpful for FMC solvers who want to improve their skills and verify whether their solution is efficient.
+        </p>
+        <p>
+            For example, you can put in a scramble and see if there are any good EOs that you missed.
+            Or you can put in a scramble and a partial solution, then see what the best continuations are.
+        </p>
+    </div>
 </body>
 
 </html>
