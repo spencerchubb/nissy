@@ -1,5 +1,4 @@
-from flask import Flask, render_template_string, request
-from index import index_html
+from flask import Flask, render_template, request
 from scramble import get_scramble
 from solve import solve
 
@@ -19,16 +18,13 @@ def index():
             nisstype = int(request.form.get('nisstype'))
 
             solutions = solve(step_name, scramble, min_moves, max_moves, max_solutions, nisstype)
-            return render_template_string(index_html, solutions=solutions)
+            return render_template('index.html', solutions=solutions)
         elif request.form.get('get_scramble') != None:
             scramble_type = request.form.get('scramble_type')
             scramble = get_scramble(scramble_type)
-            return render_template_string(index_html, scramble=scramble)
+            return render_template('index.html', scramble=scramble)
 
-    # Ideally we would use render_template instead of render_template_string.
-    # However, I couldn't get it to work with pyinstaller to create an executable.
-    # If we ever figure out how to make that work, we can switch to render_template.
-    return render_template_string(index_html)
+    return render_template('index.html')
 
 if __name__ == '__main__':
     app.run(debug=True)
