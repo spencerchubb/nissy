@@ -320,6 +320,15 @@
 <body onload="loadFormValues()">
     <h1 style="margin-top: 2rem;">Nissy Online</h1>
 
+    {% if error %}
+    <p style="
+        margin-top: 2rem;
+        padding: 0.5rem 1rem;
+        outline: solid 2px #af5c5c;
+        border-radius: 8px;
+        background: rgb(120 0 0);">{{ error }}</p>
+    {% endif %}
+
     <form method="post" onchange="saveFormValues()" style="margin-top: 2rem;">
         <input type="hidden" name="solve">
 
