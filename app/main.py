@@ -31,15 +31,16 @@ def index():
         # If the form has a hidden input with name="solve", then we are solving.
         # Otherwise, we are getting a scramble.
         if request.form.get('solve') != None:
-            step_name = request.form.get('step_name')
+            step = request.form.get('step')
             scramble = request.form.get('scramble')
-            min_moves = int(request.form.get('min_moves'))
-            max_moves = int(request.form.get('max_moves'))
-            max_solutions = int(request.form.get('max_solutions'))
+            num_eos = int(request.form.get('num_eos'))
+            num_drs = int(request.form.get('num_drs'))
+            num_htrs = int(request.form.get('num_htrs'))
+            num_finishes = int(request.form.get('num_finishes'))
             nisstype = int(request.form.get('nisstype'))
 
             solutions = time_limit(
-                lambda: solve(step_name, scramble, min_moves, max_moves, max_solutions, nisstype),
+                lambda: solve(step, scramble, num_eos, num_drs, num_htrs, num_finishes, nisstype),
                 seconds=1
             )
             if solutions:

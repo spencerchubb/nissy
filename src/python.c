@@ -107,7 +107,7 @@ alglist_to_strings(AlgList *alglist) {
     int resultLen = 0;
     for (AlgListNode *i = alglist->first; i != NULL; i = i->next, resultLen++) {
         char *alg_string = alg_to_string(i->alg);
-        append_len(i->alg, alg_string);
+        // append_len(i->alg, alg_string);
         result[resultLen] = alg_string;
     }
 

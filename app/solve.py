@@ -43,9 +43,9 @@ def decode_strings(result):
         index += 1
     return solutions
 
-def solve(step_name, scramble, min_moves=1, max_moves=20, max_solutions=1, nisstype=0):
+def solve(step, scramble, num_eos=5, num_drs=5, num_htrs=5, num_finishes=5, nisstype=0):
     '''
-    step_name: string
+    step: string
     scramble: string
     min_moves: int
     max_moves: int
@@ -55,23 +55,28 @@ def solve(step_name, scramble, min_moves=1, max_moves=20, max_solutions=1, nisst
 
     # Only allow these step names.
     # For example, we don't allow 'optimal' because it uses too much RAM.
-    if step_name not in ['eo', 'dr', 'htr', 'drfin', 'htrfin', 'findable_dr']:
-        return
+    if step not in ['eo', 'dr', 'htr', 'drfin', 'htrfin', 'findable_dr', 'findable_finish']:
+        return ['Error: Invalid step name: ' + str(step)]
 
-    if step_name == 'findable_dr':
-        return findable_finish_from_dr(scramble, max_solutions, nisstype)
+    if step == 'findable_dr':
+        return findable_dr(scramble, num_eos, num_drs, nisstype)
+    
+    if step == 'findable_finish':
+        return findable_finish_from_dr(scramble, num_htrs, num_finishes, nisstype)
 
     nissy.python_solve.argtypes = [SolveArguments]
     nissy.python_solve.restype = ctypes.POINTER(ctypes.c_char_p)
 
     scramble = clean_whitespace(scramble)
 
+    max_solutions = num_eos if step == 'eo' else num_drs if step == 'dr' else num_htrs if step == 'htr' else num_finishes
+
     solve_args = SolveArguments(
-        step_name.encode(),
+        step.encode(),
         scramble.encode(),
         ctypes.pointer(SolveOptions(
-            min_moves=min_moves,
-            max_moves=max_moves,
+            min_moves=1,
+            max_moves=20,
             max_solutions=max_solutions,
             nthreads=1,
             optimal=-1,
@@ -85,23 +90,41 @@ def solve(step_name, scramble, min_moves=1, max_moves=20, max_solutions=1, nisst
     
     result = nissy.python_solve(solve_args)
 
-    return decode_strings(result)
+    solutions = decode_strings(result)
+    solutions = [f'{solution} ({alg_len(solution)})' for solution in solutions]
+    return solutions
 
-def findable_finish_from_dr(scramble, max_solutions=1, nisstype=0):
-    htr_solutions = solve('htr', scramble, max_solutions=max_solutions, nisstype=nisstype)
+def findable_dr(scramble, num_eos, num_drs, nisstype):
+    eos = solve('eo', scramble, num_eos=num_eos, nisstype=nisstype)
     solutions = []
-    for htr_solution in htr_solutions:
-        # Get the last instance of '(' to find when the alg ends
-        left_paren = htr_solution.rfind('(')
 
-        alg = htr_solution[:left_paren - 1]
-
-        finish = solve(
-            'htrfin',
-            scramble + ' ' + alg,
-            max_solutions=1,
+    for eo in eos:
+        drs = solve(
+            'dr',
+            scramble + ' ' + eo,
+            num_drs=num_drs,
             nisstype=nisstype)
         
-        solutions.append(htr_solution + ' ➡ ' + finish[0])
+        for dr in drs:
+            solutions.append(f'{eo} ➡ {dr} ({alg_len(f"{eo} {dr}")})')
+
+    return solutions
+
+def findable_finish_from_dr(scramble, num_htrs, num_finishes, nisstype):
+    htrs = solve('htr', scramble, num_htrs=num_htrs, nisstype=nisstype)
+    solutions = []
+
+    for htr in htrs:
+        finishes = solve(
+            'htrfin',
+            scramble + ' ' + htr,
+            num_finishes=num_finishes,
+            nisstype=nisstype)
+        
+        for finish in finishes:
+            solutions.append(f'{htr} ➡ {finish} ({alg_len(f"{htr} {finish}")})')
         
     return solutions
+
+def alg_len(alg):
+    return len(alg.split())

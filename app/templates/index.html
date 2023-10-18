@@ -15,7 +15,7 @@
             max-width: 800px;
             width: 100%;
             margin: auto;
-            padding-bottom: 96px;
+            padding: 16px 16px 64px 16px;
         }
 
         form {
@@ -238,7 +238,8 @@
             "htr": "HTR from DR",
             "drfin": "Leave slice from DR",
             "htrfin": "Finish from HTR",
-            "findable_dr": "Findable finish from DR",
+            "findable_dr": "Findable DR",
+            "findable_finish": "Findable finish from DR",
         };
 
         let nissTypes = {
@@ -258,26 +259,25 @@
         ];
 
         function loadFormValues() {
-            const stepSelect = document.querySelector('[name="step_name"]');
+            const stepSelect = document.querySelector('[name="step"]');
             const nissTypeSelect = document.querySelector('[name="nisstype"]');
             const scrambleTypeSelect = document.querySelector('[name="scramble_type"]');
 
             document.querySelector('[name="scramble"]').value = localStorage.getItem('scramble') || '';
-            document.querySelector('[name="min_moves"]').value = localStorage.getItem('min_moves') || 1;
-            document.querySelector('[name="max_moves"]').value = localStorage.getItem('max_moves') || 20;
-            document.querySelector('[name="max_solutions"]').value = localStorage.getItem('max_solutions') || 1;
+            document.querySelector('[name="num_eos"]').value = localStorage.getItem('num_eos') || 5;
+            document.querySelector('[name="num_drs"]').value = localStorage.getItem('num_drs') || 5;
+            document.querySelector('[name="num_htrs"]').value = localStorage.getItem('num_htrs') || 5;
+            document.querySelector('[name="num_finishes"]').value = localStorage.getItem('num_finishes') || 5;
 
-            // Load and populate step_name select options
+            // Load and populate step select options
             for (const stepKey in steps) {
                 const option = document.createElement('option');
                 option.value = stepKey;
                 option.text = steps[stepKey];
                 stepSelect.appendChild(option);
             }
-            const savedStep = localStorage.getItem('step_name');
-            if (savedStep) {
-                stepSelect.value = savedStep;
-            }
+            const savedStep = localStorage.getItem('step') ?? Object.keys(steps)[0];
+            stepSelect.value = savedStep;
 
             // Load and populate nisstype select options
             for (const nissTypeKey in nissTypes) {
@@ -286,10 +286,8 @@
                 option.text = nissTypeKey;
                 nissTypeSelect.appendChild(option);
             }
-            const savedNissType = localStorage.getItem('nisstype');
-            if (savedNissType) {
-                nissTypeSelect.value = savedNissType;
-            }
+            const savedNissType = localStorage.getItem('nisstype') ?? Object.keys(nissTypes)[0];
+            nissTypeSelect.value = savedNissType;
 
             // Load and populate scramble_type select options
             for (const scrambleType of scrambleTypes) {
@@ -298,19 +296,18 @@
                 option.text = scrambleType;
                 scrambleTypeSelect.appendChild(option);
             }
-            const savedScrambleType = localStorage.getItem('scramble_type');
-            if (savedScrambleType) {
-                scrambleTypeSelect.value = savedScrambleType;
-            }
+            const savedScrambleType = localStorage.getItem('scramble_type') ?? scrambleTypes[0];
+            scrambleTypeSelect.value = savedScrambleType;
         }
 
         // Function to save form values to local storage
         function saveFormValues() {
-            localStorage.setItem('step_name', document.querySelector('[name="step_name"]').value);
+            localStorage.setItem('step', document.querySelector('[name="step"]').value);
             localStorage.setItem('scramble', document.querySelector('[name="scramble"]').value);
-            localStorage.setItem('min_moves', document.querySelector('[name="min_moves"]').value);
-            localStorage.setItem('max_moves', document.querySelector('[name="max_moves"]').value);
-            localStorage.setItem('max_solutions', document.querySelector('[name="max_solutions"]').value);
+            localStorage.setItem('num_eos', document.querySelector('[name="num_eos"]').value);
+            localStorage.setItem('num_drs', document.querySelector('[name="num_drs"]').value);
+            localStorage.setItem('num_htrs', document.querySelector('[name="num_htrs"]').value);
+            localStorage.setItem('num_finishes', document.querySelector('[name="num_finishes"]').value);
             localStorage.setItem('nisstype', document.querySelector('[name="nisstype"]').value);
             localStorage.setItem('scramble_type', document.querySelector('[name="scramble_type"]').value);
         }
@@ -318,7 +315,7 @@
 </head>
 
 <body onload="loadFormValues()">
-    <h1 style="margin-top: 2rem;">Nissy Online</h1>
+    <h1 style="margin-top: 1rem;">Nissy Online</h1>
 
     {% if error %}
     <p style="
@@ -332,20 +329,23 @@
     <form method="post" onchange="saveFormValues()" style="margin-top: 2rem;">
         <input type="hidden" name="solve">
 
-        <p>Step Name:</p>
-        <select name="step_name" required></select>
+        <p>Step:</p>
+        <select name="step" required></select>
 
         <p>Scramble:</p>
-        <textarea type="text" name="scramble" rows="5" required></textarea>
+        <textarea type="text" name="scramble" rows="5" placeholder="Enter scramble" required></textarea>
 
-        <p>Min Moves:</p>
-        <input type="number" name="min_moves" min="1" max="20" required>
+        <p># of EOs:</p>
+        <input type="number" name="num_eos" min="1" placeholder="Enter number of EOs" required>
 
-        <p>Max Moves:</p>
-        <input type="number" name="max_moves" min="1" max="20" required>
+        <p># of DRs:</p>
+        <input type="number" name="num_drs" min="1" placeholder="Enter number of DRs" required>
 
-        <p>Max Solutions:</p>
-        <input type="number" name="max_solutions" min="1" required>
+        <p># of HTRs:</p>
+        <input type="number" name="num_htrs" min="1" placeholder="Enter number of HTRs" required>
+
+        <p># of Finishes:</p>
+        <input type="number" name="num_finishes" min="1" placeholder="Enter number of Finishes" required>
 
         <p>Niss Type:</p>
         <select name="nisstype" required></select>

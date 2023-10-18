@@ -11,7 +11,7 @@ sudo pip3 install -r requirements.txt
 cd app
 
 # Compile the shared library for the python wrapper
-gcc -shared -o nissy.so -fPIC ../src/*.c -DVERSION=\"2.0.6\"
+gcc -shared -o nissy.so -fPIC ./src/*.c -DVERSION=\"2.0.6\"
 
 # Running with sudo is needed to access port 80
 sudo python3 app/main.py
