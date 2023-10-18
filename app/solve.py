@@ -43,7 +43,7 @@ def decode_strings(result):
         index += 1
     return solutions
 
-def solve(step, scramble, num_eos=5, num_drs=5, num_htrs=5, num_finishes=5, nisstype=0):
+def solve(step, scramble, num_eos=5, num_drs=5, num_htrs=5, num_finishes=5, nisstype=0, display_len=False):
     '''
     step: string
     scramble: string
@@ -91,7 +91,10 @@ def solve(step, scramble, num_eos=5, num_drs=5, num_htrs=5, num_finishes=5, niss
     result = nissy.python_solve(solve_args)
 
     solutions = decode_strings(result)
-    solutions = [f'{solution} ({alg_len(solution)})' for solution in solutions]
+
+    if display_len:
+        solutions = [f'{solution} ({alg_len(solution)})' for solution in solutions]
+    
     return solutions
 
 def findable_dr(scramble, num_eos, num_drs, nisstype):

@@ -40,7 +40,7 @@ def index():
             nisstype = int(request.form.get('nisstype'))
 
             solutions = time_limit(
-                lambda: solve(step, scramble, num_eos, num_drs, num_htrs, num_finishes, nisstype),
+                lambda: solve(step, scramble, num_eos, num_drs, num_htrs, num_finishes, nisstype, display_len=True),
                 seconds=1
             )
             if solutions:
