@@ -14,7 +14,7 @@ cd app
 gcc -shared -o nissy.so -fPIC ../src/*.c -DVERSION=\"2.0.6\"
 
 # Running with sudo is needed to access port 80
-sudo python3 app/main.py
+sudo python3 main.py
 
 # Deploy in prod
 sudo kill -9 $(sudo lsof -t -i:80)

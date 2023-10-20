@@ -1,6 +1,7 @@
 import ctypes
 from ctypes import CDLL
 import re
+from typing import List
 
 # https://pyinstaller.org/en/stable/feature-notes.html
 # According to these PyInstaller docs, ctypes must be used in a specific way.
@@ -109,6 +110,7 @@ def findable_dr(scramble, num_eos, num_drs, nisstype):
             nisstype=nisstype)
         
         for dr in drs:
+            [eo, dr] = cancel_algs([eo, dr])
             solutions.append(f'{eo} ➡ {dr} ({alg_len(f"{eo} {dr}")})')
 
     return solutions
@@ -125,9 +127,57 @@ def findable_finish_from_dr(scramble, num_htrs, num_finishes, nisstype):
             nisstype=nisstype)
         
         for finish in finishes:
+            [htr, finish] = cancel_algs([htr, finish])
             solutions.append(f'{htr} ➡ {finish} ({alg_len(f"{htr} {finish}")})')
         
     return solutions
 
 def alg_len(alg):
     return len(alg.split())
+
+def move_to_power(move: str):
+    # Remove parentheses
+    move = move.replace("(", "").replace(")", "")
+
+    if len(move) == 1:
+        return 1
+    elif move[1] == "2":
+        return 2
+    else:
+        return 3
+
+def cancel_algs(algs: List[str]):
+    # Split algs into lists of moves
+    algs = [alg.split() for alg in algs]
+
+    curr = 0
+    while len(algs) >= curr + 2:
+
+        # Check last move of current alg and first move of next alg.
+        # If they are the same face, cancel them.
+        while algs[curr][-1][0] == algs[curr+1][0][0]:
+            last = algs[curr][-1]
+            first = algs[curr+1][0]
+
+            # For now if there is niss, don't cancel.
+            # TODO: Handle niss cancellation.
+            if (last[-1] == ")" or first[0] == "("):
+                break
+
+            # Remove first move of next alg
+            algs[curr+1] = algs[curr+1][1:]
+
+            power = (move_to_power(last) + move_to_power(first)) % 4
+            if power == 0:
+                # Remove move
+                algs[curr] = algs[curr][:-1]
+            else:
+                # Update power of move
+                algs[curr][-1] = algs[curr][-1][0] + ("2" if power == 2 else "'" if power == 3 else "")
+
+        curr += 1
+
+    # Display algs as strings
+    algs = [" ".join(alg) for alg in algs]
+    return algs
+
