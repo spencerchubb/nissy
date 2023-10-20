@@ -12,6 +12,10 @@
         }
 
         body {
+            margin: 0;
+        }
+
+        main {
             max-width: 800px;
             width: 100%;
             margin: auto;
@@ -315,112 +319,99 @@
 </head>
 
 <body onload="loadFormValues()">
-    <h1 style="margin-top: 1rem;">Nissy Online</h1>
+    <nav style="justify-content: space-between; padding: 0 16px;">
+        <h1>Nissy Online</h1>
+        <a class="link" href="https://github.com/spencerchubb/nissy">GitHub</a>
+    </nav>
 
-    {% if error %}
-    <p style="
-        margin-top: 2rem;
-        padding: 0.5rem 1rem;
-        outline: solid 2px #af5c5c;
-        border-radius: 8px;
-        background: rgb(120 0 0);">{{ error }}</p>
-    {% endif %}
-
-    <form method="post" onchange="saveFormValues()" style="margin-top: 2rem;">
-        <input type="hidden" name="solve">
-
-        <p>Step:</p>
-        <select name="step" required></select>
-
-        <p>Scramble:</p>
-        <textarea type="text" name="scramble" rows="5" placeholder="Enter scramble" required></textarea>
-
-        <p># of EOs:</p>
-        <input type="number" name="num_eos" min="1" placeholder="Enter number of EOs" required>
-
-        <p># of DRs:</p>
-        <input type="number" name="num_drs" min="1" placeholder="Enter number of DRs" required>
-
-        <p># of HTRs:</p>
-        <input type="number" name="num_htrs" min="1" placeholder="Enter number of HTRs" required>
-
-        <p># of Finishes:</p>
-        <input type="number" name="num_finishes" min="1" placeholder="Enter number of Finishes" required>
-
-        <p>Niss Type:</p>
-        <select name="nisstype" required></select>
-
-        <button type="submit">Solve</button>
-    </form>
-
-    {% if solutions %}
-    <h2 style="margin-top: 1rem;">Solutions:</h2>
-    <ul style="margin-top: 1rem;">
-        {% for solution in solutions %}
-        <li>{{ solution }}</li>
-        {% endfor %}
-    </ul>
-    {% endif %}
-
-    <div class="divider"></div>
-
-    <form method="post" onchange="saveFormValues()">
-        <input type="hidden" name="get_scramble">
-
-        <p>Scramble Type:</p>
-        <select name="scramble_type" required></select>
-
-        <button type="submit">Scramble</button>
-    </form>
-
-    {% if scramble %}
-    <h2 style="margin-top: 1rem;">Scramble:</h2>
-    <p style="margin-top: 1rem;">{{ scramble }}</p>
-    {% endif %}
-
-    <div class="about-div">
-        <style>
-            .about-div h2 {
-                margin: 3rem auto 0 auto;
-                max-width: 600px;
-            }
-
-            .about-div p {
-                margin: 1rem auto 0 auto;
-                max-width: 600px;
-            }
-        </style>
-
-        <h2>What is Nissy Online?</h2>
-        <p>
-            Nissy Online is an online version of nissy.
-        </p>
-        <p>
-            Now you no longer have to generate or download massive tables to use nissy.
-            This website also provides a much more intuitive interface.
-        </p>
-        <h2>What is Nissy?</h2>
-        <p>
-            Nissy is a tool for the Fewest Moves Challenge (FMC).
-            It helps you find good EOs, DRs, and HTRs while using niss.
-        </p>
-        <p>
-            NISS stands for Normal Inverse Scramble Switch, and it is a very common technique for FMC.
-            This tool is essentially a Rubik's Cube solver that can get you to a given state using niss.
-        </p>
-        <p>
-            Sebastiano Tronto created the original nissy that this website is based on.
-            You can learn more <a href="https://nissy.tronto.net/" class="link">here</a>.
-        </p>
-        <h2>Who should use Nissy Online?</h2>
-        <p>
-            Nissy Online is helpful for FMC solvers who want to improve their skills and verify whether their solution is efficient.
-        </p>
-        <p>
-            For example, you can put in a scramble and see if there are any good EOs that you missed.
-            Or you can put in a scramble and a partial solution, then see what the best continuations are.
-        </p>
-    </div>
+    <main>
+        {% if error %}
+        <p style="
+            margin-top: 2rem;
+            padding: 0.5rem 1rem;
+            outline: solid 2px #af5c5c;
+            border-radius: 8px;
+            background: rgb(120 0 0);">{{ error }}</p>
+        {% endif %}
+        <form method="post" onchange="saveFormValues()" style="margin-top: 2rem;">
+            <input type="hidden" name="solve">
+            <p>Step:</p>
+            <select name="step" required></select>
+            <p>Scramble:</p>
+            <textarea type="text" name="scramble" rows="5" placeholder="Enter scramble" required></textarea>
+            <p># of EOs:</p>
+            <input type="number" name="num_eos" min="1" placeholder="Enter number of EOs" required>
+            <p># of DRs:</p>
+            <input type="number" name="num_drs" min="1" placeholder="Enter number of DRs" required>
+            <p># of HTRs:</p>
+            <input type="number" name="num_htrs" min="1" placeholder="Enter number of HTRs" required>
+            <p># of Finishes:</p>
+            <input type="number" name="num_finishes" min="1" placeholder="Enter number of Finishes" required>
+            <p>Niss Type:</p>
+            <select name="nisstype" required></select>
+            <button type="submit">Solve</button>
+        </form>
+        {% if solutions %}
+        <h2 style="margin-top: 1rem;">Solutions:</h2>
+        <ul style="margin-top: 1rem;">
+            {% for solution in solutions %}
+            <li>{{ solution }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+        <div class="divider"></div>
+        <form method="post" onchange="saveFormValues()">
+            <input type="hidden" name="get_scramble">
+            <p>Scramble Type:</p>
+            <select name="scramble_type" required></select>
+            <button type="submit">Scramble</button>
+        </form>
+        {% if scramble %}
+        <h2 style="margin-top: 1rem;">Scramble:</h2>
+        <p style="margin-top: 1rem;">{{ scramble }}</p>
+        {% endif %}
+        <div class="about-div">
+            <style>
+                .about-div h2 {
+                    margin: 3rem auto 0 auto;
+                    max-width: 600px;
+                }
+                .about-div p {
+                    margin: 1rem auto 0 auto;
+                    max-width: 600px;
+                }
+            </style>
+            <h2>What is Nissy Online?</h2>
+            <p>
+                Nissy Online is an online version of nissy.
+            </p>
+            <p>
+                Now you no longer have to generate or download massive tables to use nissy.
+                This website also provides a much more intuitive interface.
+            </p>
+            <h2>What is Nissy?</h2>
+            <p>
+                Nissy is a tool for the Fewest Moves Challenge (FMC).
+                It helps you find good EOs, DRs, and HTRs while using niss.
+            </p>
+            <p>
+                NISS stands for Normal Inverse Scramble Switch, and it is a very common technique for FMC.
+                This tool is essentially a Rubik's Cube solver that can get you to a given state using niss.
+            </p>
+            <p>
+                Sebastiano Tronto created the original nissy that this website is based on.
+                You can learn more <a href="https://nissy.tronto.net/" class="link">here</a>.
+            </p>
+            <h2>Who should use Nissy Online?</h2>
+            <p>
+                Nissy Online is helpful for FMC solvers who want to improve their skills and verify whether their solution is efficient.
+            </p>
+            <p>
+                For example, you can put in a scramble and see if there are any good EOs that you missed.
+                Or you can put in a scramble and a partial solution, then see what the best continuations are.
+            </p>
+        </div>
+    </main>
 </body>
 
 <!-- Google tag (gtag.js) -->
