@@ -238,6 +238,7 @@
     <script>
         let steps = {
             "eo": "EO",
+            "rzp": "RZP",
             "dr": "DR",
             "htr": "HTR from DR",
             "drfin": "Leave slice from DR",
@@ -272,6 +273,7 @@
             document.querySelector('[name="num_drs"]').value = localStorage.getItem('num_drs') || 5;
             document.querySelector('[name="num_htrs"]').value = localStorage.getItem('num_htrs') || 5;
             document.querySelector('[name="num_finishes"]').value = localStorage.getItem('num_finishes') || 5;
+            document.querySelector('[name="rzps"]').value = localStorage.getItem('rzps') || '4e4c2e3c2e4c';
 
             // Load and populate step select options
             for (const stepKey in steps) {
@@ -314,6 +316,7 @@
             localStorage.setItem('num_finishes', document.querySelector('[name="num_finishes"]').value);
             localStorage.setItem('nisstype', document.querySelector('[name="nisstype"]').value);
             localStorage.setItem('scramble_type', document.querySelector('[name="scramble_type"]').value);
+            localStorage.setItem('rzps', document.querySelector('[name="rzps"]').value);
         }
     </script>
 </head>
@@ -349,6 +352,8 @@
             <input type="number" name="num_finishes" min="1" placeholder="Enter number of Finishes" required>
             <p>Niss Type:</p>
             <select name="nisstype" required></select>
+            <p>RZPs:</p>
+            <input type="text" name="rzps" placeholder="Enter xexc's. Example: 4e4c2e3c2e4c" />
             <button type="submit">Solve</button>
         </form>
         {% if solutions %}

@@ -29,6 +29,7 @@ class SolveArguments(ctypes.Structure):
     _fields_ = [
         ("stepName", ctypes.c_char_p),
         ("scrambleString", ctypes.c_char_p),
+        ("rzps", ctypes.c_char_p),
         ("opts", ctypes.POINTER(SolveOptions))
     ]
 
@@ -44,7 +45,7 @@ def decode_strings(result):
         index += 1
     return solutions
 
-def solve(step, scramble, num_eos=5, num_drs=5, num_htrs=5, num_finishes=5, nisstype=0, display_len=False):
+def solve(step, scramble, rzps='', num_eos=5, num_drs=5, num_htrs=5, num_finishes=5, nisstype=0, display_len=False):
     '''
     step: string
     scramble: string
@@ -56,7 +57,7 @@ def solve(step, scramble, num_eos=5, num_drs=5, num_htrs=5, num_finishes=5, niss
 
     # Only allow these step names.
     # For example, we don't allow 'optimal' because it uses too much RAM.
-    if step not in ['eo', 'dr', 'htr', 'drfin', 'htrfin', 'findable_dr', 'findable_finish']:
+    if step not in ['eo', 'rzp', 'dr', 'htr', 'drfin', 'htrfin', 'findable_dr', 'findable_finish']:
         return ['Error: Invalid step name: ' + str(step)]
 
     if step == 'findable_dr':
@@ -75,6 +76,7 @@ def solve(step, scramble, num_eos=5, num_drs=5, num_htrs=5, num_finishes=5, niss
     solve_args = SolveArguments(
         step.encode(),
         scramble.encode(),
+        rzps.encode(),
         ctypes.pointer(SolveOptions(
             min_moves=1,
             max_moves=20,

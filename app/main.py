@@ -38,9 +38,10 @@ def index():
             num_htrs = int(request.form.get('num_htrs'))
             num_finishes = int(request.form.get('num_finishes'))
             nisstype = int(request.form.get('nisstype'))
+            rzps = request.form.get('rzps')
 
             solutions = time_limit(
-                lambda: solve(step, scramble, num_eos, num_drs, num_htrs, num_finishes, nisstype, display_len=True),
+                lambda: solve(step, scramble, rzps, num_eos, num_drs, num_htrs, num_finishes, nisstype, display_len=True),
                 seconds=1
             )
             if solutions:

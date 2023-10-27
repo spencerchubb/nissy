@@ -1,57 +1,6 @@
-// #include "commands.c"
 #include "shell.h"
 
 /* Functions that are designed to be called in python */
-
-/* Copied from shell.c */
-void
-cleanwhitespaces(char *line)
-{
-	char *i;
-
-	for (i = line; *i != 0; i++)
-		if (*i == '\t' || *i == '\n')
-			*i = ' ';
-}
-
-/*
-* Copied from shell.c
-* This function assumes that **v is large enough
-*/
-int
-parseline(char *line, char **v)
-{
-	char *t;
-	int n = 0;
-	
-	cleanwhitespaces(line);
-
-	for (t = strtok(line, " "); t != NULL; t = strtok(NULL, " "))
-		strcpy(v[n++], t);
-
-	return n;
-}
-
-/* Based on 'launch' from shell.c */
-// void
-// python_exec(char* line) {
-//     int i, shell_argc;
-//     char **shell_argv;
-
-// 	shell_argv = malloc(MAXNTOKENS * sizeof(char *));
-// 	for (i = 0; i < MAXNTOKENS; i++)
-// 		shell_argv[i] = malloc((MAXTOKENLEN+1) * sizeof(char));
-
-//     shell_argc = parseline(line, shell_argv);
-
-//     if (shell_argc > 0) {
-//         exec_args(shell_argc, shell_argv);
-//     }
-
-// 	for (i = 0; i < MAXNTOKENS; i++)
-// 		free(shell_argv[i]);
-// 	free(shell_argv);
-// }
 
 Step* getStep(char* stepName) {
     for (int i = 0; steps[i] != NULL; i++) {
@@ -92,13 +41,6 @@ alg_to_string(Alg *alg) {
     return result;
 }
 
-char*
-append_len(Alg *alg, char *alg_string) {
-    char len_str[10];
-    snprintf(len_str, sizeof(len_str), " (%d)", alg->len);
-    strcat(alg_string, len_str);
-}
-
 /* Similar to print_alglist defined in alg.c except it returns a list of strings */
 char**
 alglist_to_strings(AlgList *alglist) {
@@ -107,7 +49,6 @@ alglist_to_strings(AlgList *alglist) {
     int resultLen = 0;
     for (AlgListNode *i = alglist->first; i != NULL; i = i->next, resultLen++) {
         char *alg_string = alg_to_string(i->alg);
-        // append_len(i->alg, alg_string);
         result[resultLen] = alg_string;
     }
 
@@ -119,8 +60,229 @@ alglist_to_strings(AlgList *alglist) {
 typedef struct {
     char *stepName;
     char *scrambleString;
+    char *rzps;
     SolveOptions *opts;
 } SolveArgs;
+
+char* intToTernary(int num) {
+    char* ternary = (char*)malloc(9); // 8 digits + null terminator
+
+    // Convert the integer to ternary
+    for (int i = 7; i >= 0; i--) {
+        ternary[i] = (num % 3) + '0';
+        num /= 3;
+    }
+    ternary[8] = '\0';
+
+    return ternary;
+}
+
+static int
+count_bad_corners(int co)
+{
+    int totalOrientation = 0;
+    int badCorners = 0;
+
+    for (int i = 0; i < 7; i++) {
+        int ori = co % 3;
+        co /= 3;
+        totalOrientation += ori;
+        if (ori != 0) {
+            badCorners++;
+        }
+    }
+
+    // The 8th corner needs to be inferred from the other 7.
+    if (totalOrientation % 3 != 0) {
+        badCorners++;
+    }
+
+    return badCorners;
+}
+
+static int count_bad_edges(int epos) {
+    int *ep = malloc(12 * sizeof(int));
+
+    // This function will populate ep with 12 0s or 1s.
+    // 0s are non-slice edges and 1s are slice edges.
+    index_to_subset(epos / FACTORIAL4, 12, 4, ep);
+
+    int count = 0;
+    for (int i = 8; i < 12; i++) {
+        count += ep[i];
+    }
+
+    free(ep);
+
+    // Multiply by 2 because for every edge not in its slice,
+    // that means there are 2 bad edges.
+    return count * 2;
+}
+
+static bool
+find_xexc(const char *rzps, int e, int c)
+{
+    int rzps_len = strlen(rzps);
+    if (rzps_len % 4 != 0) {
+        // Invalid rzps string.
+        // rzps should be combinations of xexc
+        return false;
+    }
+
+    for (int i = 0; i < rzps_len / 4; i++) {
+        if (rzps[i] == e + '0' && rzps[i * 4 + 2] == c + '0') {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+static bool
+check_rzp(Cube cube, char *rzps)
+{
+    // RZP is solved if both are satisfied:
+    // 1. At lesat one of (eofb, eorl, eoud) is 0.
+    // 2. One of the other COs matches a user-specified RZP.
+
+    int badCornersUd = count_bad_corners(cube.coud);
+    int badCornersRl = count_bad_corners(cube.corl);
+    int badCornersFb = count_bad_corners(cube.cofb);
+
+    int badEdgesE = count_bad_edges(cube.epose);
+    int badEdgesM = count_bad_edges(cube.eposm);
+    int badEdgesS = count_bad_edges(cube.eposs);
+
+    bool rzpUd = find_xexc(rzps, badEdgesE, badCornersUd);
+    bool rzpRl = find_xexc(rzps, badEdgesM, badCornersRl);
+    bool rzpFb = find_xexc(rzps, badEdgesS, badCornersFb);
+
+    if (cube.eofb == 0 && (rzpUd || rzpRl)) {
+        return true;
+    }
+
+    if (cube.eorl == 0 && (rzpUd || rzpFb)) {
+        return true;
+    }
+
+    if (cube.eoud == 0 && (rzpFb || rzpRl)) {
+        return true;
+    }
+
+    return false;
+}
+
+bool moves_are_same_face(Move m1, Move m2) {
+    // If (m1-1)/3) == (m2-1)/3, they are same face.
+    // Integer division in C floors the result.
+    int face1 = (m1 - 1) / 3;
+    int face2 = (m2 - 1) / 3;
+    return face1 == face2;
+}
+
+bool moves_are_opposite_face(Move m1, Move m2) {
+    // If (m1-1)/6 == (m2-1)/6, they are either same face OR opposite face.
+    int axis1 = (m1 - 1) / 6;
+    int axis2 = (m2 - 1) / 6;
+    return axis1 == axis2 && !moves_are_same_face(m1, m2);
+}
+
+bool alg_is_redundant(Alg *alg1, Alg *alg2) {
+    if (alg1->len != alg2->len) {
+        return false;
+    }
+
+    // The algs are redundant if both conditions are satisfied::
+    // 1. All moves except the last are the same
+    // 2. The last moves are on the same face
+
+    // Example of redundant algs: R U and R U'.
+
+    int len = alg1->len;
+    for (int i = 0; i < len - 1; i++) {
+        if (alg1->move[i] != alg2->move[i]) {
+            return false;
+        }
+    }
+
+    return moves_are_same_face(alg1->move[len - 1], alg2->move[len - 1]);
+}
+
+bool alg_is_redundant_in_algs(Alg *alg, AlgList *algs) {
+    for (AlgListNode *i = algs->first; i != NULL; i = i->next) {
+        if (alg_is_redundant(alg, i->alg)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+// If we are using recursion, we have to do maxMoves instead of maxSolutions.
+// Otherwise, we will only search deep and not wide.
+void append_rzp_sols(Alg *sol, AlgList *sols, Cube cube, char *rzps, int maxMoves, Move moves[], int numMoves) {
+    if (maxMoves <= 0) {
+        return;
+    }
+
+    for (int i = 0; i < numMoves; i++) {
+        // Look at the last two moves to see if this move will be redundant.
+        int len = sol->len;
+        if (len >= 1) {
+            int prev = sol->move[len - 1];
+
+            if (moves_are_same_face(prev, moves[i])) {
+                continue;
+            }
+
+            if (len >= 2
+                && moves_are_opposite_face(prev, moves[i])
+                && moves_are_same_face(sol->move[len - 2], moves[i])) {
+                continue;
+            }
+        }
+
+        Cube newCube = apply_move(moves[i], cube);
+
+        Alg *newSol = new_alg("");
+        copy_alg(sol, newSol);
+        append_move(newSol, moves[i], false);
+
+        if (check_rzp(newCube, rzps) && !alg_is_redundant_in_algs(newSol, sols)) {
+            append_alg(sols, newSol);
+        }
+
+        append_rzp_sols(newSol, sols, newCube, rzps, maxMoves - 1, moves, numMoves);
+        i++;
+    }
+
+    return;
+}
+
+// Give a cube, return all RZP solutions up to maxMoves.
+AlgList* solve_rzp(Cube cube, char *rzps, int maxMoves) {
+    Alg *sol = new_alg("");
+    AlgList *sols = new_alglist();
+
+    // If eo is solved on fb axis
+    if (cube.eofb == 0) {
+        Move moves[] = {U, U2, U3, D, D2, D3, R, R2, R3, L, L2, L3, F2, B2};
+        append_rzp_sols(sol, sols, cube, rzps, maxMoves, moves, 14);
+    }
+
+    // If eo is solved on rl axis
+    if (cube.eorl == 0) {
+        Move moves[] = {U, U2, U3, D, D2, D3, F, F2, F3, B, B2, B3, R2, L2};
+        append_rzp_sols(sol, sols, cube, rzps, maxMoves, moves, 14);
+    }
+
+    // If eo is solved on ud axis
+    if (cube.eoud == 0) {
+        Move moves[] = {F, F2, F3, B, B2, B3, R, R2, R3, L, L2, L3, U2, D2};
+        append_rzp_sols(sol, sols, cube, rzps, maxMoves, moves, 14);
+    }
+
+    return sols;
+}
 
 /*
 * Based on 'solve_exec' from commands.c
@@ -130,11 +292,13 @@ char**
 python_solve(SolveArgs solveArgs) {
     char *stepName = solveArgs.stepName;
     char *scrambleString = solveArgs.scrambleString;
+    char *rzps = solveArgs.rzps;
     SolveOptions *opts = solveArgs.opts;
 
     // Print statements for debugging
     // printf("stepName: %s\n", stepName);
     // printf("scrambleString: %s\n", scrambleString);
+    // printf("rzps: %s\n", rzps);
     // printf("min_moves: %d\n", opts->min_moves);
     // printf("max_moves: %d\n", opts->max_moves);
     // printf("max_solutions: %d\n", opts->max_solutions);
@@ -146,18 +310,25 @@ python_solve(SolveArgs solveArgs) {
     // printf("print_number: %d\n", opts->print_number);
     // printf("count_only: %d\n", opts->count_only);
 
-    Step *step = getStep(stepName);
-    if (step == NULL) {
-        printf("Error: Step '%s' not found\n", stepName);
-        return NULL;
-    }
-
     Alg *scramble = new_alg(scrambleString);
 
 	init_all_movesets();
 	init_symcoord();
 
     Cube c = apply_alg(scramble, (Cube){0});
+    printf("epose: %d, eposs: %d, eposm: %d, eofb: %d, eorl: %d, eoud: %d, coud: %d, cofb: %d, corl: %d, cp: %d, cpos: %d\n", c.epose, c.eposs, c.eposm, c.eofb, c.eorl, c.eoud, c.coud, c.cofb, c.corl, c.cp, c.cpos);
+
+    if (strcmp(stepName, "rzp") == 0) {
+        AlgList *alglist = solve_rzp(c, rzps, 3);
+        return alglist_to_strings(alglist);
+    }
+
+    Step *step = getStep(stepName);
+    if (step == NULL) {
+        printf("Error: Step '%s' not found\n", stepName);
+        return NULL;
+    }
+
     AlgList* alglist = solve(c, step, opts);
 
     // It is a lot more complicated to return the AlgList directly.
