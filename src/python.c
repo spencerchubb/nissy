@@ -57,25 +57,25 @@ alglist_to_strings(AlgList *alglist) {
     return result;
 }
 
-typedef struct {
-    char *stepName;
-    char *scrambleString;
-    char *rzps;
-    SolveOptions *opts;
+typedef struct StepData {
+    char *key;
+    char *value;
+} StepData;
+
+
+typedef struct SolveStep {
+    char *name;
+    char *shortname;
+    struct StepData *data;
+    int datalen;
+} SolveStep;
+
+typedef struct SolveArgs {
+    struct SolveStep *steps;
+    int num_steps;
+    char *scramble;
+    int nisstype;
 } SolveArgs;
-
-char* intToTernary(int num) {
-    char* ternary = (char*)malloc(9); // 8 digits + null terminator
-
-    // Convert the integer to ternary
-    for (int i = 7; i >= 0; i--) {
-        ternary[i] = (num % 3) + '0';
-        num /= 3;
-    }
-    ternary[8] = '\0';
-
-    return ternary;
-}
 
 static int
 count_bad_corners(int co)
@@ -120,7 +120,7 @@ static int count_bad_edges(int epos) {
 }
 
 static bool
-find_xexc(const char *rzps, int e, int c)
+find_xexc(char *rzps, int e, int c)
 {
     int rzps_len = strlen(rzps);
     if (rzps_len % 4 != 0) {
@@ -252,14 +252,16 @@ void append_rzp_sols(Alg *sol, AlgList *sols, Cube cube, char *rzps, int maxMove
         }
 
         append_rzp_sols(newSol, sols, newCube, rzps, maxMoves - 1, moves, numMoves);
-        i++;
     }
 
     return;
 }
 
 // Give a cube, return all RZP solutions up to maxMoves.
-AlgList* solve_rzp(Cube cube, char *rzps, int maxMoves) {
+AlgList* solve_rzp(Cube cube, SolveOptions *opts) {
+    char *rzps = opts->rzps;
+    int maxMoves = opts->max_moves;
+
     Alg *sol = new_alg("");
     AlgList *sols = new_alglist();
 
@@ -284,57 +286,113 @@ AlgList* solve_rzp(Cube cube, char *rzps, int maxMoves) {
     return sols;
 }
 
-/*
-* Based on 'solve_exec' from commands.c
-* For opts, see struct solveoptions in cubetypes.h
-*/
-char**
-python_solve(SolveArgs solveArgs) {
-    char *stepName = solveArgs.stepName;
-    char *scrambleString = solveArgs.scrambleString;
-    char *rzps = solveArgs.rzps;
-    SolveOptions *opts = solveArgs.opts;
+char *get_step_value(SolveStep step, char *key) {
+    for (int i = 0; i < step.datalen; i++) {
+        if (strcmp(step.data[i].key, key) == 0) {
+            return step.data[i].value;
+        }
+    }
+    return NULL;
+}
+
+AlgList* solve_one_step(Cube cube, char *shortname, SolveOptions *opts) {
+    if (strcmp(shortname, "rzp") == 0) {
+        return solve_rzp(cube, opts);
+    }
+
+    Step *step = getStep(shortname);
+    if (step == NULL) {
+        printf("Error: Step '%s' not found\n", step->name);
+        return new_alglist();
+    }
+
+    return solve(cube, step, opts);
+}
+
+AlgList* solve_helper(Alg *scramble, AlgList *sols, SolveStep *steps, int step_index, int num_steps, int nisstype) {
+    if (step_index >= num_steps) {
+        return sols;
+    }
+
+    SolveStep step = steps[step_index];
+    char *step_name = step.name;
+
+    SolveOptions *opts = malloc(sizeof(SolveOptions));
+    opts->min_moves = 0;
+    opts->max_moves = 20;
+    opts->max_solutions = 10000; // A large number
+    opts->nthreads = 1;
+    opts->optimal = -1; // Allow suboptimal solutions
+    opts->nisstype = nisstype;
+    opts->verbose = 0;
+    opts->all = 0;
+    opts->print_number = 0;
+    opts->count_only = 0;
+
+    // Set options based on step
+    if (strcmp(step_name, "EO") == 0) {
+        opts->max_solutions = atoi(get_step_value(step, "num_eos"));
+    } else if (strcmp(step_name, "RZP") == 0) {
+        opts->max_moves = atoi(get_step_value(step, "num_rzp_moves"));
+        opts->rzps = get_step_value(step, "rzps");
+    } else if (strcmp(step_name, "DR") == 0) {
+        opts->max_solutions = atoi(get_step_value(step, "num_drs"));
+    } else if (strcmp(step_name, "HTR") == 0) {
+        opts->max_solutions = atoi(get_step_value(step, "num_htrs"));
+    } else if (strcmp(step_name, "Leave Slice") == 0) {
+        opts->max_solutions = atoi(get_step_value(step, "num_leave_slice"));
+    } else if (strcmp(step_name, "Finish") == 0) {
+        opts->max_solutions = atoi(get_step_value(step, "num_finishes"));
+    }
+
+    AlgList *new_sols = new_alglist();
+    for (AlgListNode *i = sols->first; i != NULL; i = i->next) {
+        Alg *alg = i->alg;
+        Cube cube = apply_alg(scramble, (Cube){0});
+        cube = apply_alg(alg, cube);
+        AlgList *sols = solve_one_step(cube, step.shortname, opts);
+
+        for (AlgListNode *j = sols->first; j != NULL; j = j->next) {
+            Alg *sol = j->alg;
+            Alg *combined_sol = new_alg("");
+            copy_alg(alg, combined_sol);
+            compose_alg(combined_sol, sol);
+            append_alg(new_sols, combined_sol);
+        }
+    }
+
+    return solve_helper(scramble, new_sols, steps, step_index + 1, num_steps, nisstype);
+}
+
+char** python_solve(SolveArgs solveArgs) {
+    struct SolveStep *steps = solveArgs.steps;
+    int num_steps = solveArgs.num_steps;
+    char *scrambleString = solveArgs.scramble;
+    int nisstype = solveArgs.nisstype;
 
     // Print statements for debugging
-    // printf("stepName: %s\n", stepName);
     // printf("scrambleString: %s\n", scrambleString);
-    // printf("rzps: %s\n", rzps);
-    // printf("min_moves: %d\n", opts->min_moves);
-    // printf("max_moves: %d\n", opts->max_moves);
-    // printf("max_solutions: %d\n", opts->max_solutions);
-    // printf("nthreads: %d\n", opts->nthreads);
-    // printf("optimal: %d\n", opts->optimal);
-    // printf("niss_type: %d\n", opts->nisstype);
-    // printf("verbose: %d\n", opts->verbose);
-    // printf("all: %d\n", opts->all);
-    // printf("print_number: %d\n", opts->print_number);
-    // printf("count_only: %d\n", opts->count_only);
+    // printf("nisstype: %d\n", nisstype);
+    // printf("num_steps: %d\n", num_steps);
+    // for (int i = 0; i < num_steps; i++) {
+    //     struct SolveStep step = steps[i];
+    //     printf("  %s:\n", step.name);
+    //     for (int j = 0; j < step.datalen; j++) {
+    //         char *key = step.data[j].key;
+    //         char *value = step.data[j].value;
+    //         printf("    %s: %s\n", key, value);
+    //     }
+    // }
 
     Alg *scramble = new_alg(scrambleString);
 
 	init_all_movesets();
 	init_symcoord();
 
-    Cube c = apply_alg(scramble, (Cube){0});
-    printf("epose: %d, eposs: %d, eposm: %d, eofb: %d, eorl: %d, eoud: %d, coud: %d, cofb: %d, corl: %d, cp: %d, cpos: %d\n", c.epose, c.eposs, c.eposm, c.eofb, c.eorl, c.eoud, c.coud, c.cofb, c.corl, c.cp, c.cpos);
-
-    if (strcmp(stepName, "rzp") == 0) {
-        AlgList *alglist = solve_rzp(c, rzps, 3);
-        return alglist_to_strings(alglist);
-    }
-
-    Step *step = getStep(stepName);
-    if (step == NULL) {
-        printf("Error: Step '%s' not found\n", stepName);
-        return NULL;
-    }
-
-    AlgList* alglist = solve(c, step, opts);
-
-    // It is a lot more complicated to return the AlgList directly.
-    // We would have to use ctypes to define AlgList, AlgNode, Alg, Move, and maybe even more structs.
-    // That is why we are just returning strings.
-    return alglist_to_strings(alglist);
+    AlgList *sols = new_alglist();
+    append_alg(sols, new_alg("")); // Add empty alg so the for loop works
+    sols = solve_helper(scramble, sols, steps, 0, num_steps, nisstype);
+    return alglist_to_strings(sols);
 }
 
 /* Based on 'scramble_exec' from commands.c */

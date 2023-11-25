@@ -302,6 +302,7 @@ solveoptions
 	bool                      all;
 	bool                      print_number;
 	bool                      count_only;
+    char *                    rzps;
 };
 
 struct
