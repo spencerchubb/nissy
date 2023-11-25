@@ -492,18 +492,16 @@
                 data,
             };
         });
-        console.log(steps);
-        console.log(scrambleInput.value);
-        console.log(nisstypeInput.value);
 
         const solutionsList = document.getElementById("solutions-list");
         solutionsList.innerHTML = "<p>Loading...</p>";
-        fetch("/solve", {
+        fetch("/", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
             },
             body: JSON.stringify({
+                method: "solve",
                 data: steps,
                 scramble: scrambleInput.value,
                 nisstype: nisstypeInput.value,
@@ -526,18 +524,18 @@
         const scrambleText = document.getElementById("scramble-text");
         scrambleText.textContent = "Loading...";
 
-        fetch("/scramble", {
+        fetch("/", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
             },
             body: JSON.stringify({
+                method: "scramble",
                 scrambleType,
             }),
         })
             .then(res => res.json())
             .then(json => {
-                console.log(json)
                 const scramble = json.scramble;
                 scrambleText.textContent = scramble;
             });
@@ -555,7 +553,6 @@
         optionsDiv.style.display = "flex";
         optionsDiv.style.flexDirection = "column";
 
-        console.log(optionsState)
         optionsDiv.innerHTML = "";
         optionsState.forEach((step, i) => {
             optionsDiv.appendChild(renderStep(step, i));

@@ -25,26 +25,24 @@ def time_limit(fn, seconds):
     else:
         return result
 
-@app.route('/', methods=['GET'])
+# Everything goes through one route since we use a proxy from the main server to this server.
+@app.route('/', methods=['GET', 'POST'])
 def index():
+    if request.method == 'POST':
+        body = request.get_json()
+        if body['method'] == 'scramble':
+            scramble = get_scramble(body['scrambleType'])
+            return { 'scramble': scramble }
+        elif body['method'] == 'solve':
+            solutions = time_limit(
+                lambda: solve(body, display_len=True),
+                seconds=1
+            )
+            if solutions is None:
+                solutions = ['Timed out after 1 second. Try using fewer steps or fewer solutions.']
+            return solutions
+    
     return render_template('index.html')
-
-@app.route('/scramble', methods=['POST'])
-def _scramble():
-    body = request.get_json()
-    scramble = get_scramble(body['scrambleType'])
-    return { 'scramble': scramble }
-
-@app.route('/solve', methods=['POST'])
-def _solve():
-    body = request.get_json()
-    solutions = time_limit(
-        lambda: solve(body, display_len=True),
-        seconds=1
-    )
-    if solutions is None:
-        solutions = ['Timed out after 1 second. Try using fewer steps or fewer solutions.']
-    return solutions
 
 if __name__ == '__main__':
     app.run(debug=False, host='0.0.0.0', port=80)
