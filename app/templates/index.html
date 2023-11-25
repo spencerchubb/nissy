@@ -495,7 +495,7 @@
 
         const solutionsList = document.getElementById("solutions-list");
         solutionsList.innerHTML = "<p>Loading...</p>";
-        fetch("/", {
+        fetch("/nissy_methods", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -524,7 +524,7 @@
         const scrambleText = document.getElementById("scramble-text");
         scrambleText.textContent = "Loading...";
 
-        fetch("/", {
+        fetch("/nissy_methods", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
