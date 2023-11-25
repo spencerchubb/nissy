@@ -25,11 +25,11 @@ def time_limit(fn, seconds):
     else:
         return result
 
-@app.route('/', methods=['GET', 'POST'])
+@app.route('/', methods=['GET'])
 def index():
     return render_template('index.html')
 
-@app.route('/nissy_methods', methods=['GET'])
+@app.route('/nissy_methods', methods=['POST'])
 def nissy_methods():
     body = request.get_json()
     if body['method'] == 'scramble':
