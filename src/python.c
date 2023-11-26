@@ -420,6 +420,9 @@ char** python_solve(SolveArgs solveArgs) {
         strings[1] = NULL;
         return strings;
     }
+
+    sort_alglist(solve_output->sols);
+    
     return alglist_to_strings(solve_output->sols);
 }
 
