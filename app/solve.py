@@ -53,7 +53,7 @@ def decode_strings(result):
         index += 1
     return solutions
 
-def solve(json, display_len=False):
+def solve(json):
 
     nissy.python_solve.argtypes = [SolveArgs]
     nissy.python_solve.restype = ctypes.POINTER(ctypes.c_char_p)
@@ -93,10 +93,4 @@ def solve(json, display_len=False):
 
     solutions = decode_strings(result)
 
-    if display_len:
-        solutions = [f'{solution} ({alg_len(solution)})' for solution in solutions]
-    
     return solutions
-
-def alg_len(alg):
-    return len(alg.split())

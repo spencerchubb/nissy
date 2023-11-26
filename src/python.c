@@ -39,6 +39,10 @@ alg_to_string(Alg *alg) {
     if (niss)
         strcat(result, ")");
 
+    char alg_len[5];
+    sprintf(alg_len, " (%d)", alg->len);
+    strcat(result, alg_len);
+
     return result;
 }
 

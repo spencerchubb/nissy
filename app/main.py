@@ -37,7 +37,7 @@ def nissy_methods():
         return { 'scramble': scramble }
     elif body['method'] == 'solve':
         solutions = time_limit(
-            lambda: solve(body, display_len=True),
+            lambda: solve(body),
             seconds=1
         )
         if solutions is None:
