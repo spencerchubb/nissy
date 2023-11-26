@@ -385,9 +385,14 @@ solvestop(int d, int op, SolveOptions *opts, AlgList *sols)
 
 /* Public functions **********************************************************/
 
-AlgList *
-solve(Cube cube, Step *step, SolveOptions *opts)
-{
+SolveOutput *solve_output_new(AlgList *sols, char *error_msg) {
+    SolveOutput *so = malloc(sizeof(SolveOutput));
+    so->sols = sols;
+    so->error_msg = error_msg;
+    return so;
+}
+
+SolveOutput *solve(Cube cube, Step *step, SolveOptions *opts) {
 	bool ready;
 	int i, d, op, nt;
 	Alg *algaux;
@@ -409,9 +414,10 @@ solve(Cube cube, Step *step, SolveOptions *opts)
 	sols = new_alglist();
 
 	if (nt == 0) {
-		fprintf(stderr, "Cube not ready for solving step: ");
-		fprintf(stderr, "%s\n", step->ready_msg);
-		return sols;
+        char *msg = malloc(sizeof(char) * 100);
+        sprintf(msg, "Step is not ready to be solved. %s\n", step->ready_msg);
+        fprintf(stderr, "%s", msg);
+        return solve_output_new(sols, msg);
 	}
 
 	if (opts->min_moves == 0) {
@@ -421,7 +427,7 @@ solve(Cube cube, Step *step, SolveOptions *opts)
 				algaux = new_alg("");
 				append_alg(sols, algaux);
 				free_alg(algaux);
-				return sols;
+                return solve_output_new(sols, NULL);
 			}
 		}
 	}
@@ -439,7 +445,7 @@ solve(Cube cube, Step *step, SolveOptions *opts)
 		}
 	}
 
-	return sols;
+	return solve_output_new(sols, NULL);
 }
 
 /* TODO: make more general! */
@@ -474,13 +480,13 @@ solve_2phase(Cube cube, int nthreads)
 		sols1 = new_alglist();
 		append_alg(sols1, new_alg(""));
 	} else {
-		sols1 = solve(cube, &drany_HTM, &opts1);
+		sols1 = solve(cube, &drany_HTM, &opts1)->sols;
 	}
 	bestalg = new_alg("");
 	bestlen = 999;
 	for (i = sols1->first; i != NULL; i = i->next) {
 		c = apply_alg(i->alg, cube);
-		sols2 = solve(c, &dranyfin_DR, &opts2);
+		sols2 = solve(c, &dranyfin_DR, &opts2)->sols;
 		
 		if (sols2->len > 0) {
 			newb = i->alg->len + sols2->first->alg->len;

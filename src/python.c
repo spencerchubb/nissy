@@ -1,4 +1,5 @@
-#include "shell.h"
+#include "alg.h"
+#include "solve.h"
 
 /* Functions that are designed to be called in python */
 
@@ -258,32 +259,39 @@ void append_rzp_sols(Alg *sol, AlgList *sols, Cube cube, char *rzps, int maxMove
 }
 
 // Give a cube, return all RZP solutions up to maxMoves.
-AlgList* solve_rzp(Cube cube, SolveOptions *opts) {
+SolveOutput* solve_rzp(Cube cube, SolveOptions *opts) {
     char *rzps = opts->rzps;
     int maxMoves = opts->max_moves;
 
     Alg *sol = new_alg("");
     AlgList *sols = new_alglist();
+    
+    bool eofb_solved = cube.eofb == 0;
+    bool eorl_solved = cube.eorl == 0;
+    bool eoud_solved = cube.eoud == 0;
 
-    // If eo is solved on fb axis
-    if (cube.eofb == 0) {
+    if (!eofb_solved && !eorl_solved && !eoud_solved) {
+        char *msg = malloc(100);
+        sprintf(msg, "Cannot do RZP yet, EO must be solved on at least 1 axis\n");
+        return solve_output_new(sols, msg);
+    }
+
+    if (eofb_solved) {
         Move moves[] = {U, U2, U3, D, D2, D3, R, R2, R3, L, L2, L3, F2, B2};
         append_rzp_sols(sol, sols, cube, rzps, maxMoves, moves, 14);
     }
 
-    // If eo is solved on rl axis
-    if (cube.eorl == 0) {
+    if (eorl_solved) {
         Move moves[] = {U, U2, U3, D, D2, D3, F, F2, F3, B, B2, B3, R2, L2};
         append_rzp_sols(sol, sols, cube, rzps, maxMoves, moves, 14);
     }
 
-    // If eo is solved on ud axis
-    if (cube.eoud == 0) {
+    if (eoud_solved) {
         Move moves[] = {F, F2, F3, B, B2, B3, R, R2, R3, L, L2, L3, U2, D2};
         append_rzp_sols(sol, sols, cube, rzps, maxMoves, moves, 14);
     }
 
-    return sols;
+    return solve_output_new(sols, NULL);
 }
 
 char *get_step_value(SolveStep step, char *key) {
@@ -295,23 +303,25 @@ char *get_step_value(SolveStep step, char *key) {
     return NULL;
 }
 
-AlgList* solve_one_step(Cube cube, char *shortname, SolveOptions *opts) {
+SolveOutput *solve_one_step(Cube cube, char *shortname, SolveOptions *opts) {
     if (strcmp(shortname, "rzp") == 0) {
         return solve_rzp(cube, opts);
     }
 
     Step *step = getStep(shortname);
     if (step == NULL) {
-        printf("Error: Step '%s' not found\n", step->name);
-        return new_alglist();
+        char *msg = malloc(100);
+        sprintf(msg, "Error: Step '%s' not found\n", shortname);
+        printf("%s", msg);
+        return solve_output_new(new_alglist(), msg);
     }
 
     return solve(cube, step, opts);
 }
 
-AlgList* solve_helper(Alg *scramble, AlgList *sols, SolveStep *steps, int step_index, int num_steps, int nisstype) {
+SolveOutput *solve_helper(Alg *scramble, AlgList *sols, SolveStep *steps, int step_index, int num_steps, int nisstype) {
     if (step_index >= num_steps) {
-        return sols;
+        return solve_output_new(sols, NULL);
     }
 
     SolveStep step = steps[step_index];
@@ -345,14 +355,20 @@ AlgList* solve_helper(Alg *scramble, AlgList *sols, SolveStep *steps, int step_i
         opts->max_solutions = atoi(get_step_value(step, "num_finishes"));
     }
 
+
     AlgList *new_sols = new_alglist();
+    
     for (AlgListNode *i = sols->first; i != NULL; i = i->next) {
         Alg *alg = i->alg;
         Cube cube = apply_alg(scramble, (Cube){0});
         cube = apply_alg(alg, cube);
-        AlgList *sols = solve_one_step(cube, step.shortname, opts);
+        SolveOutput *solve_output = solve_one_step(cube, step.shortname, opts);
 
-        for (AlgListNode *j = sols->first; j != NULL; j = j->next) {
+        if (solve_output->error_msg != NULL) {
+            return solve_output;
+        }
+
+        for (AlgListNode *j = solve_output->sols->first; j != NULL; j = j->next) {
             Alg *sol = j->alg;
             Alg *combined_sol = new_alg("");
             copy_alg(alg, combined_sol);
@@ -391,8 +407,16 @@ char** python_solve(SolveArgs solveArgs) {
 
     AlgList *sols = new_alglist();
     append_alg(sols, new_alg("")); // Add empty alg so the for loop works
-    sols = solve_helper(scramble, sols, steps, 0, num_steps, nisstype);
-    return alglist_to_strings(sols);
+    SolveOutput *solve_output = solve_helper(scramble, sols, steps, 0, num_steps, nisstype);
+
+    if (solve_output->error_msg != NULL) {
+        // Return an array of strings with the error message
+        char **strings = malloc(2 * sizeof(char*));
+        strings[0] = solve_output->error_msg;
+        strings[1] = NULL;
+        return strings;
+    }
+    return alglist_to_strings(solve_output->sols);
 }
 
 /* Based on 'scramble_exec' from commands.c */
