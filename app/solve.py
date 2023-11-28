@@ -81,12 +81,13 @@ def solve(json):
     step_list = (SolveStep * len(step_list))(*step_list)
 
     scramble = clean_whitespace(json['scramble'])
+    nisstype = int(json['nisstype']) if json['nisstype'] else 0
     
     solve_args = SolveArgs(
         steps=step_list,
         num_steps=len(step_list),
         scramble=scramble.encode(),
-        nisstype=int(json['nisstype']),
+        nisstype=nisstype,
     )
 
     result = nissy.python_solve(solve_args)

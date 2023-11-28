@@ -1,5 +1,5 @@
 import threading
-from flask import Flask, render_template, request
+from flask import Flask, jsonify, render_template, request
 from scramble import get_scramble
 from solve import solve
 
@@ -43,6 +43,12 @@ def nissy_methods():
         if solutions is None:
             solutions = ['Timed out after 1 second. Try using fewer steps or fewer solutions.']
         return solutions
+    
+@app.errorhandler(Exception)
+def handle_generic_error(e):
+    response = jsonify({"error": "Internal server error."})
+    response.status_code = 500
+    return response
 
 if __name__ == '__main__':
     app.run(debug=False, host='0.0.0.0', port=80)
