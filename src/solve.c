@@ -392,7 +392,7 @@ SolveOutput *solve_output_new(AlgList *sols, char *error_msg) {
     return so;
 }
 
-SolveOutput *solve(Cube cube, Step *step, SolveOptions *opts) {
+SolveOutput *solve(struct timespec start, Cube cube, Step *step, SolveOptions *opts) {
 	bool ready;
 	int i, d, op, nt;
 	Alg *algaux;
@@ -434,6 +434,10 @@ SolveOutput *solve(Cube cube, Step *step, SolveOptions *opts) {
 
 	op = -1;
 	for (d = opts->min_moves; !solvestop(d, op, opts, sols); d++) {
+        if (elapsed_ms(start) > TIME_LIMIT) {
+            return solve_output_new(sols, TIMEOUT_MSG);
+        }
+
 		if (opts->verbose)
 			fprintf(stderr, "Searching depth %d\n", d);
 
@@ -450,7 +454,7 @@ SolveOutput *solve(Cube cube, Step *step, SolveOptions *opts) {
 
 /* TODO: make more general! */
 Alg *
-solve_2phase(Cube cube, int nthreads)
+solve_2phase(struct timespec start, Cube cube, int nthreads)
 {
 	int bestlen, newb;
 	Alg *bestalg, *ret;
@@ -480,13 +484,13 @@ solve_2phase(Cube cube, int nthreads)
 		sols1 = new_alglist();
 		append_alg(sols1, new_alg(""));
 	} else {
-		sols1 = solve(cube, &drany_HTM, &opts1)->sols;
+		sols1 = solve(start, cube, &drany_HTM, &opts1)->sols;
 	}
 	bestalg = new_alg("");
 	bestlen = 999;
 	for (i = sols1->first; i != NULL; i = i->next) {
 		c = apply_alg(i->alg, cube);
-		sols2 = solve(c, &dranyfin_DR, &opts2)->sols;
+		sols2 = solve(start, c, &dranyfin_DR, &opts2)->sols;
 		
 		if (sols2->len > 0) {
 			newb = i->alg->len + sols2->first->alg->len;

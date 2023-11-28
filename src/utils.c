@@ -1,5 +1,11 @@
 #include "utils.h"
 
+int elapsed_ms(struct timespec start) {
+    struct timespec end;
+    clock_gettime(CLOCK_MONOTONIC, &end);
+    return (end.tv_sec - start.tv_sec) * 1000 + (end.tv_nsec - start.tv_nsec) / 1000000;
+}
+
 void
 apply_permutation(int *perm, int *set, int n)
 {

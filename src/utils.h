@@ -1,11 +1,14 @@
 #ifndef UTILS_H
 #define UTILS_H
 
+#include "time.h"
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
+#define TIME_LIMIT          1000 // 1 second
+#define TIMEOUT_MSG         "Timed out after 1 second. Try using fewer moves or fewer solutions."
 #define POW2TO6             64ULL
 #define POW2TO11            2048ULL
 #define POW2TO12            4096ULL
@@ -21,6 +24,7 @@
 #define MIN(a,b)            (((a) < (b)) ? (a) : (b))
 #define MAX(a,b)            (((a) > (b)) ? (a) : (b))
 
+int         elapsed_ms(struct timespec start);
 void        apply_permutation(int *perm, int *set, int n);
 int         binomial(int n, int k);
 int         digit_array_to_int(int *a, int n, int b);

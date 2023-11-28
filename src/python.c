@@ -224,9 +224,14 @@ bool alg_is_redundant_in_algs(Alg *alg, AlgList *algs) {
 
 // If we are using recursion, we have to do maxMoves instead of maxSolutions.
 // Otherwise, we will only search deep and not wide.
-void append_rzp_sols(Alg *sol, AlgList *sols, Cube cube, char *rzps, int maxMoves, Move moves[], int numMoves) {
+// Returns a boolean indicating whether it has surpassed the time limit.
+bool append_rzp_sols(struct timespec start, Alg *sol, AlgList *sols, Cube cube, char *rzps, int maxMoves, Move moves[], int numMoves) {
+    if (elapsed_ms(start) > TIME_LIMIT) {
+        return true;
+    }
+    
     if (maxMoves <= 0) {
-        return;
+        return false;
     }
 
     for (int i = 0; i < numMoves; i++) {
@@ -256,14 +261,14 @@ void append_rzp_sols(Alg *sol, AlgList *sols, Cube cube, char *rzps, int maxMove
             append_alg(sols, newSol);
         }
 
-        append_rzp_sols(newSol, sols, newCube, rzps, maxMoves - 1, moves, numMoves);
+        return append_rzp_sols(start, newSol, sols, newCube, rzps, maxMoves - 1, moves, numMoves);
     }
 
-    return;
+    return false;
 }
 
 // Give a cube, return all RZP solutions up to maxMoves.
-SolveOutput* solve_rzp(Cube cube, SolveOptions *opts) {
+SolveOutput* solve_rzp(struct timespec start ,Cube cube, SolveOptions *opts) {
     char *rzps = opts->rzps;
     int maxMoves = opts->max_moves;
 
@@ -282,17 +287,26 @@ SolveOutput* solve_rzp(Cube cube, SolveOptions *opts) {
 
     if (eofb_solved) {
         Move moves[] = {U, U2, U3, D, D2, D3, R, R2, R3, L, L2, L3, F2, B2};
-        append_rzp_sols(sol, sols, cube, rzps, maxMoves, moves, 14);
+        bool timed_out = append_rzp_sols(start, sol, sols, cube, rzps, maxMoves, moves, 14);
+        if (timed_out) {
+            return solve_output_new(sols, TIMEOUT_MSG);
+        }
     }
 
     if (eorl_solved) {
         Move moves[] = {U, U2, U3, D, D2, D3, F, F2, F3, B, B2, B3, R2, L2};
-        append_rzp_sols(sol, sols, cube, rzps, maxMoves, moves, 14);
+        bool timed_out = append_rzp_sols(start, sol, sols, cube, rzps, maxMoves, moves, 14);
+        if (timed_out) {
+            return solve_output_new(sols, TIMEOUT_MSG);
+        }
     }
 
     if (eoud_solved) {
         Move moves[] = {F, F2, F3, B, B2, B3, R, R2, R3, L, L2, L3, U2, D2};
-        append_rzp_sols(sol, sols, cube, rzps, maxMoves, moves, 14);
+        bool timed_out = append_rzp_sols(start, sol, sols, cube, rzps, maxMoves, moves, 14);
+        if (timed_out) {
+            return solve_output_new(sols, TIMEOUT_MSG);
+        }
     }
 
     return solve_output_new(sols, NULL);
@@ -307,9 +321,9 @@ char *get_step_value(SolveStep step, char *key) {
     return NULL;
 }
 
-SolveOutput *solve_one_step(Cube cube, char *shortname, SolveOptions *opts) {
+SolveOutput *solve_one_step(struct timespec start, Cube cube, char *shortname, SolveOptions *opts) {
     if (strcmp(shortname, "rzp") == 0) {
-        return solve_rzp(cube, opts);
+        return solve_rzp(start, cube, opts);
     }
 
     Step *step = getStep(shortname);
@@ -320,10 +334,10 @@ SolveOutput *solve_one_step(Cube cube, char *shortname, SolveOptions *opts) {
         return solve_output_new(new_alglist(), msg);
     }
 
-    return solve(cube, step, opts);
+    return solve(start, cube, step, opts);
 }
 
-SolveOutput *solve_helper(Alg *scramble, AlgList *sols, SolveStep *steps, int step_index, int num_steps, int nisstype) {
+SolveOutput *solve_helper(struct timespec start, Alg *scramble, AlgList *sols, SolveStep *steps, int step_index, int num_steps, int nisstype) {
     if (step_index >= num_steps) {
         return solve_output_new(sols, NULL);
     }
@@ -366,7 +380,7 @@ SolveOutput *solve_helper(Alg *scramble, AlgList *sols, SolveStep *steps, int st
         Alg *alg = i->alg;
         Cube cube = apply_alg(scramble, (Cube){0});
         cube = apply_alg(alg, cube);
-        SolveOutput *solve_output = solve_one_step(cube, step.shortname, opts);
+        SolveOutput *solve_output = solve_one_step(start, cube, step.shortname, opts);
 
         if (solve_output->error_msg != NULL) {
             return solve_output;
@@ -381,10 +395,16 @@ SolveOutput *solve_helper(Alg *scramble, AlgList *sols, SolveStep *steps, int st
         }
     }
 
-    return solve_helper(scramble, new_sols, steps, step_index + 1, num_steps, nisstype);
+    return solve_helper(start, scramble, new_sols, steps, step_index + 1, num_steps, nisstype);
 }
 
 char** python_solve(SolveArgs solveArgs) {
+    // Previously we implemented the timeout in python, but it was not reliable.
+    // Probably has something to do with the Global Interpreter Lock.
+    // So now we do the timeout in C.
+    struct timespec start;
+    clock_gettime(CLOCK_MONOTONIC, &start);
+
     struct SolveStep *steps = solveArgs.steps;
     int num_steps = solveArgs.num_steps;
     char *scrambleString = solveArgs.scramble;
@@ -411,7 +431,7 @@ char** python_solve(SolveArgs solveArgs) {
 
     AlgList *sols = new_alglist();
     append_alg(sols, new_alg("")); // Add empty alg so the for loop works
-    SolveOutput *solve_output = solve_helper(scramble, sols, steps, 0, num_steps, nisstype);
+    SolveOutput *solve_output = solve_helper(start, scramble, sols, steps, 0, num_steps, nisstype);
 
     if (solve_output->error_msg != NULL) {
         // Return an array of strings with the error message
@@ -422,13 +442,16 @@ char** python_solve(SolveArgs solveArgs) {
     }
 
     sort_alglist(solve_output->sols);
-    
+
     return alglist_to_strings(solve_output->sols);
 }
 
 /* Based on 'scramble_exec' from commands.c */
 char*
 python_scramble(char *scrtype) {
+    struct timespec start;
+    clock_gettime(CLOCK_MONOTONIC, &start);
+
     Cube cube;
 	CubeArray *arr;
 	Alg *scr, *ruf, *aux;
@@ -502,7 +525,7 @@ python_scramble(char *scrtype) {
     }
 
     /* TODO: can be optimized for htr and dr using htrfin, drfin */
-    scr = solve_2phase(cube, 1);
+    scr = solve_2phase(start, cube, 1);
 
     if (!strcmp(scrtype, "fmc")) {
         aux = new_alg("");

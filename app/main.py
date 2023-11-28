@@ -1,29 +1,8 @@
-import threading
 from flask import Flask, jsonify, render_template, request
 from scramble import get_scramble
 from solve import solve
 
 app = Flask(__name__)
-
-def time_limit(fn, seconds):
-    """Runs a function with a timeout in seconds.
-    If the function does not finish in time, then return None.
-    """
-    result = None
-
-    def target():
-        nonlocal result
-        result = fn()
-
-    thread = threading.Thread(target=target)
-    thread.start()
-    thread.join(timeout=seconds)
-
-    if thread.is_alive():
-        thread.join()  # Wait for the thread to finish if it's still running
-        return None
-    else:
-        return result
 
 @app.route('/', methods=['GET'])
 def index():
@@ -36,13 +15,7 @@ def nissy_methods():
         scramble = get_scramble(body['scrambleType'])
         return { 'scramble': scramble }
     elif body['method'] == 'solve':
-        solutions = time_limit(
-            lambda: solve(body),
-            seconds=1
-        )
-        if solutions is None:
-            solutions = ['Timed out after 1 second. Try using fewer steps or fewer solutions.']
-        return solutions
+        return solve(body)
     
 @app.errorhandler(Exception)
 def handle_generic_error(e):
