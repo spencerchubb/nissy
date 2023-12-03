@@ -447,7 +447,9 @@
         },
         "Finish": {
             name: "Finish",
-            shortname: "htrfin",
+            // We use drfin instead of htrfin so the Finish
+            // step can be used for both DR and HTR.
+            shortname: "drfin",
             inputs: [
                 {
                     text: "# of Finishes",
