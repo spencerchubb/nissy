@@ -82,9 +82,7 @@ typedef struct SolveArgs {
     int nisstype;
 } SolveArgs;
 
-static int
-count_bad_corners(int co)
-{
+int count_bad_corners(int co) {
     int totalOrientation = 0;
     int badCorners = 0;
 
@@ -105,7 +103,7 @@ count_bad_corners(int co)
     return badCorners;
 }
 
-static int count_bad_edges(int epos) {
+int count_bad_edges(int epos) {
     int *ep = malloc(12 * sizeof(int));
 
     // This function will populate ep with 12 0s or 1s.
@@ -124,9 +122,7 @@ static int count_bad_edges(int epos) {
     return count * 2;
 }
 
-static bool
-find_xexc(char *rzps, int e, int c)
-{
+bool find_xexc(char *rzps, int e, int c) {
     int rzps_len = strlen(rzps);
     if (rzps_len % 4 != 0) {
         // Invalid rzps string.
@@ -143,11 +139,9 @@ find_xexc(char *rzps, int e, int c)
     return false;
 }
 
-static bool
-check_rzp(Cube cube, char *rzps)
-{
+bool check_rzp(Cube cube, char *rzps) {
     // RZP is solved if both are satisfied:
-    // 1. At lesat one of (eofb, eorl, eoud) is 0.
+    // 1. At least one of (eofb, eorl, eoud) is 0.
     // 2. One of the other COs matches a user-specified RZP.
 
     int badCornersUd = count_bad_corners(cube.coud);
@@ -177,6 +171,110 @@ check_rzp(Cube cube, char *rzps)
     return false;
 }
 
+bool jzp_corners(int co, int array[8]) {
+    int totalOrientation = 0;
+    int jzpCorners = 0;
+
+    int i;
+    int c;
+    for (i = 0; i < 7; i++) {
+        c = co % 3;
+        totalOrientation += c;
+        co /= 3;
+        if (c == array[i]) {
+            jzpCorners++;
+        } else if (c == 0) {
+            // Do nothing
+        } else {
+            // Not JZP
+            return false;
+        }
+    }
+
+    // The 8th corner needs to be inferred from the other 7.
+    c = totalOrientation % 3;
+    if (c == array[i]) {
+        jzpCorners++;
+    } else if (c == 0) {
+        // Do nothing
+    } else {
+        // Not JZP
+        return false;
+    }
+
+    bool evenJzpCorners = jzpCorners % 2 == 0;
+    return evenJzpCorners;
+}
+
+bool jzp_edges(int epos, bool otherSlice) {
+    int *ep = malloc(12 * sizeof(int));
+
+    // This function will populate ep with 12 0s or 1s.
+    // 0s are non-slice edges and 1s are slice edges.
+    index_to_subset(epos / FACTORIAL4, 12, 4, ep);
+
+    // If otherSlice is true, we check indices 1, 3, 5, 7.
+    // Else, we check indices 0, 2, 4, 6.
+    bool eSliceEdgeInMSlice = ep[0 + otherSlice] || ep[2 + otherSlice] || ep[4 + otherSlice] || ep[6 + otherSlice];
+    free(ep);
+    return !eSliceEdgeInMSlice;
+}
+
+
+/** Scrambles:
+F B2 L2 D R2 U' R2 U' F2 R2 U2 R' F2 D B D' F L' F' R2
+D2 B' L2 B2 U2 R2 U L2 D R2 U2 L2 F2 B' U' F U2 F2 L D U
+R B2 D2 R2 B2 L' F2 U2 L2 F2 D L2 R F U' R2 D2 F2 L
+U L2 B2 D2 R U B' L' U' B U L2 F2 R2 U D2 B2 D' F2 R2 U' F2
+*/
+
+/** FB EOs:
+F B2 L2 D R2 U' R2 U' F2 R2 U2 R' F2 D B D' F L' F' R2 U' F U D' B
+D2 B' L2 B2 U2 R2 U L2 D R2 U2 L2 F2 B' U' F U2 F2 L U L2 B F' U F
+R B2 D2 R2 B2 L' F2 U2 L2 F2 D L2 R F U' R2 D2 F2 L R U' R' B
+U L2 B2 D2 R U B' L' U' B U L2 F2 R2 U D2 B2 D' F2 R2 U' F2 R' D' B
+*/
+
+/** RL EOs:
+F B2 L2 D R2 U' R2 U' F2 R2 U2 R' F2 D B D' F L' F' R2 L B' R2 D R
+D2 B' L2 B2 U2 R2 U L2 D R2 U2 L2 F2 B' U' F U2 F2
+R B2 D2 R2 B2 L' F2 U2 L2 F2 D L2 R F U' R2 D2 F2 L R U' R' B U L R D' R
+U L2 B2 D2 R U B' L' U' B U L2 F2 R2 U D2 B2 D' F2 R2 U' F2 R' D' B L' B2 U D L
+*/
+
+/** UD EOs:
+F B2 L2 D R2 U' R2 U' F2 R2 U2 R' F2 D B D' F L' F' R D R B' F U
+D2 B' L2 B2 U2 R2 U L2 D R2 U2 L2 F2 B' U' F U2 F2 L D U R B' D F U
+R B2 D2 R2 B2 L' F2 U2 L2 F2 D L2 R F U' R2 D2 F2 U F R' D
+U L2 B2 D2 R U B' L' U' B U L2 F2 R2 U D2 B2 D' F2 R2 U' F2 D R U2 R2 U
+*/
+
+
+bool check_jzp(Cube cube) {
+    // Letters 1 & 2: EO axis
+    // Letters 3 & 4: CO axis
+    int fbud[8] = {2, 1, 2, 1, 1, 2, 1, 1};
+    int rlud[8] = {1, 2, 1, 2, 2, 1, 2, 2};
+    int fbrl[8] = {1, 2, 1, 2, 2, 1, 2, 2};
+    int udrl[8] = {2, 1, 2, 1, 1, 2, 1, 1};
+    int udfb[8] = {1, 2, 1, 2, 2, 1, 2, 2};
+    int rlfb[8] = {2, 1, 2, 1, 1, 2, 1, 1};
+
+    if (cube.eofb == 0 && ((jzp_corners(cube.coud, fbud) && jzp_edges(cube.epose, 0)) || (jzp_corners(cube.corl, fbrl) && jzp_edges(cube.eposm, 0)))) {
+        return true;
+    }
+
+    if (cube.eorl == 0 && ((jzp_corners(cube.coud, rlud) && jzp_edges(cube.epose, 1)) || (jzp_corners(cube.cofb, rlfb) && jzp_edges(cube.eposs, 1)))) {
+        return true;
+    }
+
+    if (cube.eoud == 0 && ((jzp_corners(cube.cofb, udfb) && jzp_edges(cube.eposs, 0)) || (jzp_corners(cube.corl, udrl) && jzp_edges(cube.eposm, 1)))) {
+        return true;
+    }
+
+    return false;
+}
+
 bool moves_are_same_face(Move m1, Move m2) {
     // If (m1-1)/3) == (m2-1)/3, they are same face.
     // Integer division in C floors the result.
@@ -197,7 +295,7 @@ bool alg_is_redundant(Alg *alg1, Alg *alg2) {
         return false;
     }
 
-    // The algs are redundant if both conditions are satisfied::
+    // The algs are redundant if both conditions are satisfied:
     // 1. All moves except the last are the same
     // 2. The last moves are on the same face
 
@@ -225,7 +323,7 @@ bool alg_is_redundant_in_algs(Alg *alg, AlgList *algs) {
 // If we are using recursion, we have to do maxMoves instead of maxSolutions.
 // Otherwise, we will only search deep and not wide.
 // Returns a boolean indicating whether it has surpassed the time limit.
-bool append_rzp_sols(struct timespec start, Alg *sol, AlgList *sols, Cube cube, char *rzps, int maxMoves, Move moves[], int numMoves) {
+bool append_rzp_sols(struct timespec start, Alg *sol, AlgList *sols, Cube cube, char *rzps, int maxMoves, bool jzp, Move moves[], int numMoves) {
     if (elapsed_ms(start) > TIME_LIMIT) {
         return true;
     }
@@ -257,20 +355,26 @@ bool append_rzp_sols(struct timespec start, Alg *sol, AlgList *sols, Cube cube, 
         copy_alg(sol, newSol);
         append_move(newSol, moves[i], false);
 
-        if (check_rzp(newCube, rzps) && !alg_is_redundant_in_algs(newSol, sols)) {
+
+        bool step_solved = check_rzp(newCube, rzps) || (jzp && check_jzp(newCube));
+        if (step_solved && !alg_is_redundant_in_algs(newSol, sols)) {
             append_alg(sols, newSol);
+
+            char *alg_string = alg_to_string(newSol);
+            free(alg_string);
         }
 
-        return append_rzp_sols(start, newSol, sols, newCube, rzps, maxMoves - 1, moves, numMoves);
+        append_rzp_sols(start, newSol, sols, newCube, rzps, maxMoves - 1, jzp, moves, numMoves);
     }
 
     return false;
 }
 
 // Give a cube, return all RZP solutions up to maxMoves.
-SolveOutput* solve_rzp(struct timespec start ,Cube cube, SolveOptions *opts) {
+SolveOutput* solve_rzp(struct timespec start, Cube cube, SolveOptions *opts) {
     char *rzps = opts->rzps;
     int maxMoves = opts->max_moves;
+    bool jzp = opts->jzp;
 
     Alg *sol = new_alg("");
     AlgList *sols = new_alglist();
@@ -287,7 +391,7 @@ SolveOutput* solve_rzp(struct timespec start ,Cube cube, SolveOptions *opts) {
 
     if (eofb_solved) {
         Move moves[] = {U, U2, U3, D, D2, D3, R, R2, R3, L, L2, L3, F2, B2};
-        bool timed_out = append_rzp_sols(start, sol, sols, cube, rzps, maxMoves, moves, 14);
+        bool timed_out = append_rzp_sols(start, sol, sols, cube, rzps, maxMoves, jzp, moves, 14);
         if (timed_out) {
             return solve_output_new(sols, TIMEOUT_MSG);
         }
@@ -295,7 +399,7 @@ SolveOutput* solve_rzp(struct timespec start ,Cube cube, SolveOptions *opts) {
 
     if (eorl_solved) {
         Move moves[] = {U, U2, U3, D, D2, D3, F, F2, F3, B, B2, B3, R2, L2};
-        bool timed_out = append_rzp_sols(start, sol, sols, cube, rzps, maxMoves, moves, 14);
+        bool timed_out = append_rzp_sols(start, sol, sols, cube, rzps, maxMoves, jzp, moves, 14);
         if (timed_out) {
             return solve_output_new(sols, TIMEOUT_MSG);
         }
@@ -303,7 +407,7 @@ SolveOutput* solve_rzp(struct timespec start ,Cube cube, SolveOptions *opts) {
 
     if (eoud_solved) {
         Move moves[] = {F, F2, F3, B, B2, B3, R, R2, R3, L, L2, L3, U2, D2};
-        bool timed_out = append_rzp_sols(start, sol, sols, cube, rzps, maxMoves, moves, 14);
+        bool timed_out = append_rzp_sols(start, sol, sols, cube, rzps, maxMoves, jzp, moves, 14);
         if (timed_out) {
             return solve_output_new(sols, TIMEOUT_MSG);
         }
@@ -363,6 +467,7 @@ SolveOutput *solve_helper(struct timespec start, Alg *scramble, AlgList *sols, S
     } else if (strcmp(step_name, "RZP") == 0) {
         opts->max_moves = atoi(get_step_value(step, "num_rzp_moves"));
         opts->rzps = get_step_value(step, "rzps");
+        opts->jzp = strcmp(get_step_value(step, "jzp"), "true") == 0;
     } else if (strcmp(step_name, "DR") == 0) {
         opts->max_solutions = atoi(get_step_value(step, "num_drs"));
     } else if (strcmp(step_name, "HTR") == 0) {
@@ -372,7 +477,6 @@ SolveOutput *solve_helper(struct timespec start, Alg *scramble, AlgList *sols, S
     } else if (strcmp(step_name, "Finish") == 0) {
         opts->max_solutions = atoi(get_step_value(step, "num_finishes"));
     }
-
 
     AlgList *new_sols = new_alglist();
     

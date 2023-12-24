@@ -303,6 +303,7 @@ solveoptions
 	bool                      print_number;
 	bool                      count_only;
     char *                    rzps;
+    bool                      jzp;
 };
 
 struct

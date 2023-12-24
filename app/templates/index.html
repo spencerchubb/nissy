@@ -378,6 +378,19 @@
 </body>
 
 <script>
+    function E(name, props, children) {
+        const ele = document.createElement(name);
+        for (const [key, value] of Object.entries(props)) {
+            ele[key] = value;
+        }
+
+        children = children || [];
+        for (const child of children) {
+            ele.appendChild(child);
+        }
+        return ele;
+    }
+
     let stepData = {
         "EO": {
             name: "EO",
@@ -406,6 +419,12 @@
                     inputId: "rzps",
                     inputType: "string",
                     inputPlaceholder: "Enter xexc's. Example: 4e4c2e3c2e4c",
+                },
+                {
+                    text: "JZP",
+                    inputId: "jzp",
+                    inputType: "checkbox",
+                    inputPlaceholder: "",
                 },
             ],
         },
@@ -482,10 +501,11 @@
     document.getElementById("solve-button").onclick = () => {
         const steps = optionsState.map(step => {
             const data = step.inputs.map(input => {
-                const value = document.getElementById(input.inputId).value;
+                const ele = document.getElementById(input.inputId);
+                const value = ele.type === "checkbox" ? ele.checked : ele.value;
                 return {
                     key: input.inputId,
-                    value,
+                    value: value.toString(),
                 };
             });
             return {
@@ -628,36 +648,56 @@
         }
 
         const inputs = step.inputs.map((input, i) => {
-            const inputLabel = document.createElement("p");
-            inputLabel.textContent = input.text;
-            inputLabel.style.fontWeight = "bold";
-            inputLabel.style.marginBottom = "8px";
-            
-            const inputEle = document.createElement("input");
-            inputEle.type = input.inputType;
-            inputEle.id = input.inputId;
-            inputEle.min = 1;
-            inputEle.placeholder = input.inputPlaceholder;
-            inputEle.style.width = "100%";
-            const isLast = i === step.inputs.length - 1;
-            inputEle.style.marginBottom = isLast ? "0" : "16px";
-
-            inputEle.value = localStorage.getItem(input.inputId);
-
-            inputEle.onchange = event => {
-                const value = event.target.value;
-                localStorage.setItem(input.inputId, value);
+            if (input.inputType === "checkbox") {
+                return [E("div", {
+                        style: "display: flex; flex-direction: row; align-items: center; margin-bottom: 16px;",
+                    }, [
+                        E("p", {
+                            style: "font-weight: bold; margin-right: 8px;",
+                            textContent: input.text,
+                        }),
+                        E("input", {
+                            type: input.inputType,
+                            id: input.inputId,
+                            style: "margin-right: 8px;",
+                            checked: localStorage.getItem(input.inputId) === "true",
+                            onchange: event => {
+                                const value = event.target.checked;
+                                localStorage.setItem(input.inputId, value);
+                            },
+                        }),
+                    ])];
             }
+
+            const inputLabel = E("p", {
+                style: "font-weight: bold; margin-bottom: 8px;",
+                textContent: input.text,
+            });
+            
+            const isLast = i === step.inputs.length - 1;
+            const inputEle = E("input", {
+                type: input.inputType,
+                id: input.inputId,
+                min: 1,
+                placeholder: input.inputPlaceholder,
+                style: `width: 100%; margin-bottom: ${isLast ? "0" : "16px"};`,
+                value: localStorage.getItem(input.inputId),
+                onchange: event => {
+                    const value = event.target.value;
+                    localStorage.setItem(input.inputId, value);
+                },
+            });
 
             return [inputLabel, inputEle];
         });
 
         div.appendChild(buttonRow);
         div.appendChild(stepSelect);
-        for (const [inputLabel, input] of inputs) {
-            div.appendChild(inputLabel);
-            div.appendChild(input);
-        }
+        inputs.forEach(_inputs => {
+            _inputs.forEach(_input => {
+                div.appendChild(_input);
+            });
+        })
 
         return div;
     }
