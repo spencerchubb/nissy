@@ -370,7 +370,7 @@ bool append_rzp_sols(struct timespec start, Alg *sol, AlgList *sols, Cube cube, 
     return false;
 }
 
-// Give a cube, return all RZP solutions up to maxMoves.
+// Given a cube, return all RZP solutions up to maxMoves.
 SolveOutput* solve_rzp(struct timespec start, Cube cube, SolveOptions *opts) {
     char *rzps = opts->rzps;
     int maxMoves = opts->max_moves;
@@ -434,7 +434,7 @@ SolveOutput *solve_one_step(struct timespec start, Cube cube, char *shortname, S
     if (step == NULL) {
         char *msg = malloc(100);
         sprintf(msg, "Error: Step '%s' not found\n", shortname);
-        printf("%s", msg);
+        fprintf(stderr, "%s", msg);
         return solve_output_new(new_alglist(), msg);
     }
 
@@ -508,6 +508,7 @@ char** python_solve(SolveArgs solveArgs) {
     // So now we do the timeout in C.
     struct timespec start;
     clock_gettime(CLOCK_MONOTONIC, &start);
+    fprintf(stderr, "Solve,%ld.%09ld\n", start.tv_sec, start.tv_nsec);
 
     struct SolveStep *steps = solveArgs.steps;
     int num_steps = solveArgs.num_steps;
@@ -551,10 +552,10 @@ char** python_solve(SolveArgs solveArgs) {
 }
 
 /* Based on 'scramble_exec' from commands.c */
-char*
-python_scramble(char *scrtype) {
+char* python_scramble(char *scrtype) {
     struct timespec start;
     clock_gettime(CLOCK_MONOTONIC, &start);
+    fprintf(stderr, "Scramble,%ld.%09ld\n", start.tv_sec, start.tv_nsec);
 
     Cube cube;
 	CubeArray *arr;

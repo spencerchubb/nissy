@@ -1680,8 +1680,6 @@ prepare_step(Step *step, SolveOptions *opts)
 
 	if (step->final && opts->nisstype != NORMAL) {
 		opts->nisstype = NORMAL;
-		fprintf(stderr, "Step is final, NISS not used"
-				" (-N and -L ignored)\n");
 	}
 
 	for (i = 0; i < step->ntables; i++) {
