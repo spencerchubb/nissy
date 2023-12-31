@@ -13,8 +13,7 @@ Step* getStep(char* stepName) {
 }
 
 /* Similar to print_alg defined in alg.c except this returns a string */
-char*
-alg_to_string(Alg *alg) {
+char* alg_to_string(Alg *alg) {
     char *result = malloc(1000); // Adjust the size as needed
     char fill[4];
     int i;
@@ -355,16 +354,14 @@ bool append_rzp_sols(struct timespec start, Alg *sol, AlgList *sols, Cube cube, 
         copy_alg(sol, newSol);
         append_move(newSol, moves[i], false);
 
-
         bool step_solved = check_rzp(newCube, rzps) || (jzp && check_jzp(newCube));
         if (step_solved && !alg_is_redundant_in_algs(newSol, sols)) {
             append_alg(sols, newSol);
-
-            char *alg_string = alg_to_string(newSol);
-            free(alg_string);
         }
 
         append_rzp_sols(start, newSol, sols, newCube, rzps, maxMoves - 1, jzp, moves, numMoves);
+
+        free_alg(newSol);
     }
 
     return false;
@@ -376,7 +373,6 @@ SolveOutput* solve_rzp(struct timespec start, Cube cube, SolveOptions *opts) {
     int maxMoves = opts->max_moves;
     bool jzp = opts->jzp;
 
-    Alg *sol = new_alg("");
     AlgList *sols = new_alglist();
     
     bool eofb_solved = cube.eofb == 0;
@@ -389,30 +385,27 @@ SolveOutput* solve_rzp(struct timespec start, Cube cube, SolveOptions *opts) {
         return solve_output_new(sols, msg);
     }
 
+    Alg *sol = new_alg("");
+    bool timed_out = false;
     if (eofb_solved) {
         Move moves[] = {U, U2, U3, D, D2, D3, R, R2, R3, L, L2, L3, F2, B2};
-        bool timed_out = append_rzp_sols(start, sol, sols, cube, rzps, maxMoves, jzp, moves, 14);
-        if (timed_out) {
-            return solve_output_new(sols, TIMEOUT_MSG);
-        }
+        timed_out = timed_out || append_rzp_sols(start, sol, sols, cube, rzps, maxMoves, jzp, moves, 14);
     }
 
     if (eorl_solved) {
         Move moves[] = {U, U2, U3, D, D2, D3, F, F2, F3, B, B2, B3, R2, L2};
-        bool timed_out = append_rzp_sols(start, sol, sols, cube, rzps, maxMoves, jzp, moves, 14);
-        if (timed_out) {
-            return solve_output_new(sols, TIMEOUT_MSG);
-        }
+        timed_out = timed_out || append_rzp_sols(start, sol, sols, cube, rzps, maxMoves, jzp, moves, 14);
     }
 
     if (eoud_solved) {
         Move moves[] = {F, F2, F3, B, B2, B3, R, R2, R3, L, L2, L3, U2, D2};
-        bool timed_out = append_rzp_sols(start, sol, sols, cube, rzps, maxMoves, jzp, moves, 14);
-        if (timed_out) {
-            return solve_output_new(sols, TIMEOUT_MSG);
-        }
+        timed_out = timed_out || append_rzp_sols(start, sol, sols, cube, rzps, maxMoves, jzp, moves, 14);
     }
 
+    free_alg(sol);
+    if (timed_out) {
+        return solve_output_new(sols, TIMEOUT_MSG);
+    }
     return solve_output_new(sols, NULL);
 }
 
@@ -487,6 +480,8 @@ SolveOutput *solve_helper(struct timespec start, Alg *scramble, AlgList *sols, S
         SolveOutput *solve_output = solve_one_step(start, cube, step.shortname, opts);
 
         if (solve_output->error_msg != NULL) {
+            free_alglist(new_sols);
+            free(opts);
             return solve_output;
         }
 
@@ -496,10 +491,16 @@ SolveOutput *solve_helper(struct timespec start, Alg *scramble, AlgList *sols, S
             copy_alg(alg, combined_sol);
             compose_alg(combined_sol, sol);
             append_alg(new_sols, combined_sol);
+            free_alg(combined_sol);
         }
+
+        solve_output_free(solve_output);
     }
 
-    return solve_helper(start, scramble, new_sols, steps, step_index + 1, num_steps, nisstype);
+    SolveOutput *so = solve_helper(start, scramble, new_sols, steps, step_index + 1, num_steps, nisstype);
+    free_alglist(new_sols);
+    free(opts);
+    return so;
 }
 
 char** python_solve(SolveArgs solveArgs) {
@@ -535,20 +536,27 @@ char** python_solve(SolveArgs solveArgs) {
 	init_symcoord();
 
     AlgList *sols = new_alglist();
-    append_alg(sols, new_alg("")); // Add empty alg so the for loop works
+    Alg *empty_alg = new_alg("");
+    append_alg(sols, empty_alg); // Add empty alg so the for loop works
+    free_alg(empty_alg);
     SolveOutput *solve_output = solve_helper(start, scramble, sols, steps, 0, num_steps, nisstype);
 
+    char **strings;
     if (solve_output->error_msg != NULL) {
         // Return an array of strings with the error message
-        char **strings = malloc(2 * sizeof(char*));
+        strings = malloc(2 * sizeof(char*));
         strings[0] = solve_output->error_msg;
         strings[1] = NULL;
-        return strings;
+    } else {
+        sort_alglist(solve_output->sols);
+        strings = alglist_to_strings(solve_output->sols);
     }
 
-    sort_alglist(solve_output->sols);
+    free_alg(scramble);
+    free_alglist(sols);
+    solve_output_free(solve_output);
 
-    return alglist_to_strings(solve_output->sols);
+    return strings;
 }
 
 /* Based on 'scramble_exec' from commands.c */
@@ -658,3 +666,94 @@ char* python_scramble(char *scrtype) {
     free_alg(scr);
     return alg_string;
 }
+
+////////// For testing with valgrind //////////
+// int main(int argc, char *argv[]) {
+//     char *scrtype = "normal";
+//     char *scramble = python_scramble(scrtype);
+
+//     // Remove the length from scramble string.
+//     scramble[strlen(scramble) - 5] = '\0';
+//     printf("Scramble: %s\n", scramble);
+
+//     SolveArgs solve_args = {
+//         .steps = (struct SolveStep[]) {
+//             {
+//                 .name = "EO",
+//                 .shortname = "eo",
+//                 .data = (struct StepData[]) {
+//                     {
+//                         .key = "num_eos",
+//                         .value = "10"
+//                     }
+//                 },
+//                 .datalen = 1
+//             },
+//             {
+//                 .name = "RZP",
+//                 .shortname = "rzp",
+//                 .data = (struct StepData[]) {
+//                     {
+//                         .key = "num_rzp_moves",
+//                         .value = "3"
+//                     },
+//                     {
+//                         .key = "rzps",
+//                         .value = "xexc"
+//                     },
+//                     {
+//                         .key = "jzp",
+//                         .value = "true"
+//                     }
+//                 },
+//                 .datalen = 3
+//             },
+//             {
+//                 .name = "DR",
+//                 .shortname = "dr",
+//                 .data = (struct StepData[]) {
+//                     {
+//                         .key = "num_drs",
+//                         .value = "1"
+//                     }
+//                 },
+//                 .datalen = 1
+//             },
+//             {
+//                 .name = "HTR",
+//                 .shortname = "htr",
+//                 .data = (struct StepData[]) {
+//                     {
+//                         .key = "num_htrs",
+//                         .value = "1"
+//                     }
+//                 },
+//                 .datalen = 1
+//             },
+//             {
+//                 .name = "Finish",
+//                 .shortname = "drfin",
+//                 .data = (struct StepData[]) {
+//                     {
+//                         .key = "num_finishes",
+//                         .value = "1"
+//                     }
+//                 },
+//                 .datalen = 1
+//             }
+//         },
+//         .num_steps = 5,
+//         .scramble = scramble,
+//         .nisstype = 1
+//     };
+//     char **sols = python_solve(solve_args);
+
+//     free(scramble);
+//     for (int i = 0; sols[i] != NULL; i++) {
+//         printf("%s\n", sols[i]);
+//         free(sols[i]);
+//     }
+//     free(sols);
+
+//     return 0;
+// }

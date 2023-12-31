@@ -232,7 +232,7 @@ inplace(Alg * (*f)(Alg *), Alg *alg)
 
 	aux = f(alg);
 	copy_alg(aux, alg);
-	free(aux);
+	free_alg(aux);
 }
 
 Alg *

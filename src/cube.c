@@ -225,7 +225,9 @@ fourval_to_cube(int eofb, int ep, int coud, int cp)
 	fix_eorleoud(arr);
 	fix_cofbcorl(arr);
 
-	return arrays_to_cube(arr, pf_all);
+	Cube cube = arrays_to_cube(arr, pf_all);
+    free_cubearray(arr, pf_all);
+    return cube;
 }
 
 void

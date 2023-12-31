@@ -11,6 +11,7 @@ typedef struct SolveOutput {
 } SolveOutput;
 
 SolveOutput *   solve_output_new(AlgList *sols, char *error_msg);
+void            solve_output_free(SolveOutput *so);
 SolveOutput *   solve(struct timespec start, Cube cube, Step *step, SolveOptions *opts);
 Alg *           solve_2phase(struct timespec start, Cube cube, int nthreads);
 

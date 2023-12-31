@@ -392,6 +392,12 @@ SolveOutput *solve_output_new(AlgList *sols, char *error_msg) {
     return so;
 }
 
+void solve_output_free(SolveOutput *so) {
+    free_alglist(so->sols);
+    free(so->error_msg);
+    free(so);
+}
+
 SolveOutput *solve(struct timespec start, Cube cube, Step *step, SolveOptions *opts) {
 	bool ready;
 	int i, d, op, nt;
@@ -484,13 +490,17 @@ solve_2phase(struct timespec start, Cube cube, int nthreads)
 		sols1 = new_alglist();
 		append_alg(sols1, new_alg(""));
 	} else {
-		sols1 = solve(start, cube, &drany_HTM, &opts1)->sols;
+        SolveOutput *so = solve(start, cube, &drany_HTM, &opts1);
+        sols1 = so->sols;
+        free(so);
 	}
 	bestalg = new_alg("");
 	bestlen = 999;
 	for (i = sols1->first; i != NULL; i = i->next) {
 		c = apply_alg(i->alg, cube);
-		sols2 = solve(start, c, &dranyfin_DR, &opts2)->sols;
+        SolveOutput *so = solve(start, c, &dranyfin_DR, &opts2);
+        sols2 = so->sols;
+        free(so);
 		
 		if (sols2->len > 0) {
 			newb = i->alg->len + sols2->first->alg->len;
