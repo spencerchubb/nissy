@@ -1,6 +1,9 @@
 from flask import Flask, jsonify, render_template, request
 from scramble import get_scramble
 from solve import solve
+import logging
+
+logging.basicConfig(filename='app.log', level=logging.DEBUG)
 
 app = Flask(__name__)
 
@@ -13,8 +16,8 @@ def nissy_methods():
     body = request.get_json()
 
     # Print entire body so we have in-depth logs.
-    print(body)
-    
+    logging.info(body)
+
     if body['method'] == 'scramble':
         scramble = get_scramble(body['scrambleType'])
         return { 'scramble': scramble }
