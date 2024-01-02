@@ -436,7 +436,15 @@ SolveOutput *solve_one_step(struct timespec start, Cube cube, char *shortname, S
 
 SolveOutput *solve_helper(struct timespec start, Alg *scramble, AlgList *sols, SolveStep *steps, int step_index, int num_steps, int nisstype) {
     if (step_index >= num_steps) {
-        return solve_output_new(sols, NULL);
+        // Copy sols so it can be freed.
+        AlgList *new_sols = new_alglist();
+        for (AlgListNode *i = sols->first; i != NULL; i = i->next) {
+            Alg *copy = new_alg("");
+            copy_alg(i->alg, copy);
+            append_alg(new_sols, copy);
+            free_alg(copy);
+        }
+        return solve_output_new(new_sols, NULL);
     }
 
     SolveStep step = steps[step_index];
