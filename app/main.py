@@ -11,6 +11,10 @@ def index():
 @app.route('/nissy_methods', methods=['POST'])
 def nissy_methods():
     body = request.get_json()
+
+    # Print entire body so we have in-depth logs.
+    print(body)
+    
     if body['method'] == 'scramble':
         scramble = get_scramble(body['scrambleType'])
         return { 'scramble': scramble }

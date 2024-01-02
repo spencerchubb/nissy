@@ -517,7 +517,6 @@ char** python_solve(SolveArgs solveArgs) {
     // So now we do the timeout in C.
     struct timespec start;
     clock_gettime(CLOCK_MONOTONIC, &start);
-    fprintf(stderr, "Solve,%ld.%09ld\n", start.tv_sec, start.tv_nsec);
 
     struct SolveStep *steps = solveArgs.steps;
     int num_steps = solveArgs.num_steps;
@@ -571,7 +570,6 @@ char** python_solve(SolveArgs solveArgs) {
 char* python_scramble(char *scrtype) {
     struct timespec start;
     clock_gettime(CLOCK_MONOTONIC, &start);
-    fprintf(stderr, "Scramble,%ld.%09ld\n", start.tv_sec, start.tv_nsec);
 
     Cube cube;
 	CubeArray *arr;
