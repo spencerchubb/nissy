@@ -41,10 +41,6 @@ class SolveArgs(ctypes.Structure):
         ("nisstype", ctypes.c_int),
     ]
 
-# Replace all whitespace with a single space
-def clean_whitespace(scramble):
-    return re.sub(r"\s+", " ", scramble)
-
 def decode_strings(result):
     solutions = []
     index = 0
@@ -80,7 +76,7 @@ def solve(json):
     step_list = [encode_step(step) for step in json['data']]
     step_list = (SolveStep * len(step_list))(*step_list)
 
-    scramble = clean_whitespace(json['scramble'])
+    scramble = json['scramble']
     nisstype = int(json['nisstype']) if json['nisstype'] else 0
     
     solve_args = SolveArgs(
