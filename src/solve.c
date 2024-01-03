@@ -394,7 +394,7 @@ SolveOutput *solve_output_new(AlgList *sols, char *error_msg) {
 
 void solve_output_free(SolveOutput *so) {
     free_alglist(so->sols);
-    free(so->error_msg);
+    // Can't free error_msg because it could be a static string
     free(so);
 }
 

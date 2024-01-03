@@ -46,8 +46,7 @@ char* alg_to_string(Alg *alg) {
 }
 
 /* Similar to print_alglist defined in alg.c except it returns a list of strings */
-char**
-alglist_to_strings(AlgList *alglist) {
+char** alglist_to_strings(AlgList *alglist) {
     char **result = malloc((alglist->len + 1) * sizeof(char*)); // Adjust the size as needed
 
     int resultLen = 0;
@@ -321,14 +320,9 @@ bool alg_is_redundant_in_algs(Alg *alg, AlgList *algs) {
 
 // If we are using recursion, we have to do maxMoves instead of maxSolutions.
 // Otherwise, we will only search deep and not wide.
-// Returns a boolean indicating whether it has surpassed the time limit.
-bool append_rzp_sols(struct timespec start, Alg *sol, AlgList *sols, Cube cube, char *rzps, int maxMoves, bool jzp, Move moves[], int numMoves) {
-    if (elapsed_ms(start) > TIME_LIMIT) {
-        return true;
-    }
-    
-    if (maxMoves <= 0) {
-        return false;
+void append_rzp_sols(struct timespec start, Alg *sol, AlgList *sols, Cube cube, char *rzps, int maxMoves, bool jzp, Move moves[], int numMoves) {
+    if (maxMoves <= 0 || elapsed_ms(start) > TIME_LIMIT) {
+        return;
     }
 
     for (int i = 0; i < numMoves; i++) {
@@ -363,12 +357,10 @@ bool append_rzp_sols(struct timespec start, Alg *sol, AlgList *sols, Cube cube, 
 
         free_alg(newSol);
     }
-
-    return false;
 }
 
 // Given a cube, return all RZP solutions up to maxMoves.
-SolveOutput* solve_rzp(struct timespec start, Cube cube, SolveOptions *opts) {
+SolveOutput *solve_rzp(struct timespec start, Cube cube, SolveOptions *opts) {
     char *rzps = opts->rzps;
     int maxMoves = opts->max_moves;
     bool jzp = opts->jzp;
@@ -386,26 +378,22 @@ SolveOutput* solve_rzp(struct timespec start, Cube cube, SolveOptions *opts) {
     }
 
     Alg *sol = new_alg("");
-    bool timed_out = false;
     if (eofb_solved) {
         Move moves[] = {U, U2, U3, D, D2, D3, R, R2, R3, L, L2, L3, F2, B2};
-        timed_out = timed_out || append_rzp_sols(start, sol, sols, cube, rzps, maxMoves, jzp, moves, 14);
+        append_rzp_sols(start, sol, sols, cube, rzps, maxMoves, jzp, moves, 14);
     }
 
     if (eorl_solved) {
         Move moves[] = {U, U2, U3, D, D2, D3, F, F2, F3, B, B2, B3, R2, L2};
-        timed_out = timed_out || append_rzp_sols(start, sol, sols, cube, rzps, maxMoves, jzp, moves, 14);
+        append_rzp_sols(start, sol, sols, cube, rzps, maxMoves, jzp, moves, 14);
     }
 
     if (eoud_solved) {
         Move moves[] = {F, F2, F3, B, B2, B3, R, R2, R3, L, L2, L3, U2, D2};
-        timed_out = timed_out || append_rzp_sols(start, sol, sols, cube, rzps, maxMoves, jzp, moves, 14);
+        append_rzp_sols(start, sol, sols, cube, rzps, maxMoves, jzp, moves, 14);
     }
 
     free_alg(sol);
-    if (timed_out) {
-        return solve_output_new(sols, TIMEOUT_MSG);
-    }
     return solve_output_new(sols, NULL);
 }
 
@@ -480,18 +468,12 @@ SolveOutput *solve_helper(struct timespec start, Alg *scramble, AlgList *sols, S
     }
 
     AlgList *new_sols = new_alglist();
-    
+
     for (AlgListNode *i = sols->first; i != NULL; i = i->next) {
         Alg *alg = i->alg;
         Cube cube = apply_alg(scramble, (Cube){0});
         cube = apply_alg(alg, cube);
         SolveOutput *solve_output = solve_one_step(start, cube, step.shortname, opts);
-
-        if (solve_output->error_msg != NULL) {
-            free_alglist(new_sols);
-            free(opts);
-            return solve_output;
-        }
 
         for (AlgListNode *j = solve_output->sols->first; j != NULL; j = j->next) {
             Alg *sol = j->alg;
@@ -500,6 +482,12 @@ SolveOutput *solve_helper(struct timespec start, Alg *scramble, AlgList *sols, S
             compose_alg(combined_sol, sol);
             append_alg(new_sols, combined_sol);
             free_alg(combined_sol);
+        }
+
+        if (solve_output->error_msg != NULL) {
+            free_alglist(new_sols);
+            free(opts);
+            return solve_output;
         }
 
         solve_output_free(solve_output);
