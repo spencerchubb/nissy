@@ -25,7 +25,7 @@
         .form {
             display: grid;
             grid-template-columns: auto 1fr;
-            grid-gap: 24px 16px;
+            grid-gap: 24px 0;
             align-items: baseline;
         }
 
@@ -258,10 +258,27 @@
     </style>
 
     <script>
+        function q(sel) {
+            return document.querySelector(sel);
+        }
+
+        function E(name, props, children) {
+            const ele = document.createElement(name);
+            for (const [key, value] of Object.entries(props)) {
+                ele[key] = value;
+            }
+
+            children = children || [];
+            for (const child of children) {
+                ele.appendChild(child);
+            }
+            return ele;
+        }
+
         let nisstypes = {
             "Normal": 0,
             "Linear": 1,
-            "Niss": 2,
+            "Full Niss": 2,
         };
 
         let scrambleTypes = [
@@ -275,8 +292,8 @@
         ];
 
         function loadFormValues() {
-            const nisstypeSelect = document.getElementById("nisstype");
-            const scrambleTypeSelect = document.querySelector('[name="scramble_type"]');
+            const nisstypeSelect = q("#nisstype");
+            const scrambleTypeSelect = q('[name="scramble_type"]');
 
             // Load and populate nisstype select options
             for (const nisstypeKey in nisstypes) {
@@ -318,9 +335,9 @@
         {% endif %}
         <div id="options-div"></div>
         <div class="form" style="margin-top: 2rem;">
-            <p>Scramble:</p>
+            <p style="font-weight: bold; width: 80px;">Scram</p>
             <textarea type="text" id="scramble" rows="5" placeholder="Enter scramble" required></textarea>
-            <p>Niss Type:</p>
+            <p style="font-weight: bold; width: 80px;">Niss</p>
             <select id="nisstype" required></select>
             <button id="solve-button">Solve</button>
         </div>
@@ -328,7 +345,7 @@
         </ul>
         <div class="divider"></div>
         <div class="form">
-            <p>Scramble Type:</p>
+            <p style="margin-right: 12px;">Scramble Type:</p>
             <select name="scramble_type" required></select>
             <button id="scramble-button">Scramble</button>
         </div>
@@ -381,18 +398,6 @@
 </body>
 
 <script>
-    function E(name, props, children) {
-        const ele = document.createElement(name);
-        for (const [key, value] of Object.entries(props)) {
-            ele[key] = value;
-        }
-
-        children = children || [];
-        for (const child of children) {
-            ele.appendChild(child);
-        }
-        return ele;
-    }
 
     let stepData = {
         "EO": {
@@ -400,7 +405,7 @@
             shortname: "eo",
             inputs: [
                 {
-                    text: "# of EOs",
+                    text: "Sols",
                     inputId: "num_eos",
                     inputType: "number",
                     inputPlaceholder: "Enter number of EOs",
@@ -412,7 +417,7 @@
             shortname: "rzp",
             inputs: [
                 {
-                    text: "# of RZP moves",
+                    text: "Moves",
                     inputId: "num_rzp_moves",
                     inputType: "number",
                     inputPlaceholder: "Enter number of moves for RZP",
@@ -436,7 +441,7 @@
             shortname: "dr",
             inputs: [
                 {
-                    text: "# of DRs",
+                    text: "Sols",
                     inputId: "num_drs",
                     inputType: "number",
                     inputPlaceholder: "Enter number of DRs",
@@ -448,7 +453,7 @@
             shortname: "htr",
             inputs: [
                 {
-                    text: "# of HTRs",
+                    text: "Sols",
                     inputId: "num_htrs",
                     inputType: "number",
                     inputPlaceholder: "Enter number of HTRs",
@@ -460,7 +465,7 @@
             shortname: "drslice",
             inputs: [
                 {
-                    text: "# of Leave Slice",
+                    text: "Sols",
                     inputId: "num_leave_slice",
                     inputType: "number",
                     inputPlaceholder: "Enter number of Leave Slice Finishes",
@@ -474,7 +479,7 @@
             shortname: "drfin",
             inputs: [
                 {
-                    text: "# of Finishes",
+                    text: "Sols",
                     inputId: "num_finishes",
                     inputType: "number",
                     inputPlaceholder: "Enter number of Finishes",
@@ -487,21 +492,21 @@
         JSON.parse(localStorage.getItem("optionsState"))
         ?? [stepData["EO"]];
 
-    const scrambleInput = document.getElementById("scramble");
+    const scrambleInput = q("#scramble");
     scrambleInput.value = localStorage.getItem("scramble");
     scrambleInput.onchange = event => {
         const value = event.target.value;
         localStorage.setItem("scramble", value);
     }
 
-    const nisstypeInput = document.getElementById("nisstype");
+    const nisstypeInput = q("#nisstype");
     nisstypeInput.value = localStorage.getItem("nisstype");
     nisstypeInput.onchange = event => {
         const value = event.target.value;
         localStorage.setItem("nisstype", value);
     }
 
-    document.getElementById("solve-button").onclick = () => {
+    q("#solve-button").onclick = () => {
         const steps = optionsState.map(step => {
             const data = step.inputs.map(input => {
                 const ele = document.getElementById(input.inputId);
@@ -518,7 +523,7 @@
             };
         });
 
-        const solutionsList = document.getElementById("solutions-list");
+        const solutionsList = q("#solutions-list");
         solutionsList.innerHTML = "<p>Loading...</p>";
         fetch("/nissy_methods", {
             method: "POST",
@@ -543,10 +548,10 @@
             });
     }
 
-    document.getElementById("scramble-button").onclick = () => {
-        const scrambleType = document.querySelector('[name="scramble_type"]').value;
+    q("#scramble-button").onclick = () => {
+        const scrambleType = q('[name="scramble_type"]').value;
 
-        const scrambleText = document.getElementById("scramble-text");
+        const scrambleText = q("#scramble-text");
         scrambleText.textContent = "Loading...";
 
         fetch("/nissy_methods", {
@@ -569,7 +574,7 @@
     function renderOptions() {
         localStorage.setItem("optionsState", JSON.stringify(optionsState));
 
-        const optionsDiv = document.getElementById("options-div");
+        const optionsDiv = q("#options-div");
         if (optionsState.length === 0) {
             optionsDiv.style.display = "none";
             return;
@@ -584,125 +589,99 @@
         })
     }
 
+    function labelAndInput(labelText, input) {
+        if (input.type !== "checkbox") {
+            input.style.flexGrow = 1;
+        }
+        return E("div", {
+            style: "display: flex; align-items: center; flex: 1 0 300px;"
+        }, [
+            E("p", {
+                style: "font-weight: bold; width: 80px;",
+                textContent: labelText,
+            }), 
+            input,
+        ]);
+    }
+
     function renderStep(step, i) {
-        const div = document.createElement("div");
-        div.style.borderBottom = "solid 1px var(--gray-600)";
-        div.style.padding = "24px 0";
+        return E("div", {
+            style: "border-bottom: solid 1px var(--gray-600); padding: 12px 0;",
+        }, [
+            E("div", {
+                style: "display: flex; flex-direction: row; justify-content: end; gap: 12px; margin-bottom: 12px;",
+            }, [
+                E("button", {
+                    textContent: "Add Step ➕",
+                    style: "font-size: 0.9rem; padding: 0.4rem 0.8rem;",
+                    onclick: () => {
+                        const stepIndex = Object.keys(stepData).indexOf(step.name);
+                        const keys = Object.keys(stepData);
+                        if (stepIndex + 1 >= keys.length) return;
+                        const nextStep = stepData[keys[stepIndex + 1]]
+                        optionsState.push(nextStep);
+                        renderOptions();
+                    },
+                }),
+                E("button", {
+                    textContent: "Remove ❌",
+                    className: "btn-gray",
+                    style: "font-size: 0.9rem; padding: 0.4rem 0.8rem;",
+                    onclick: () => {
+                        // Don't allow remove if only one step.
+                        if (optionsState.length === 1) {
+                            return;
+                        }
 
-        const stepLabel = document.createElement("p");
-        stepLabel.textContent = `Step ${i + 1}`;
-        stepLabel.style.fontWeight = "bold";
-        stepLabel.style.flexGrow = "1";
-        stepLabel.style.alignSelf = "end";
-
-        const addButton = document.createElement("button");
-        addButton.textContent = "Add Step ➕";
-        addButton.style.fontSize = "0.9rem";
-        addButton.style.padding = "0.4rem 0.8rem";
-        addButton.style.marginRight = "8px";
-        addButton.onclick = () => {
-            optionsState.push(stepData[stepSelect.value]);
-            renderOptions();
-        }
-
-        const removeButton = document.createElement("button");
-        removeButton.textContent = "Remove ❌";
-        removeButton.className = "btn-gray";
-        removeButton.style.fontSize = "0.9rem";
-        removeButton.style.padding = "0.4rem 0.8rem";
-        removeButton.onclick = () => {
-            // Don't allow remove if only one step.
-            if (optionsState.length === 1) {
-                return;
-            }
-
-            optionsState.splice(i, 1);
-            renderOptions();
-        }
-
-        const buttonRow = document.createElement("div");
-        buttonRow.style.display = "flex";
-        buttonRow.style.flexDirection = "row";
-        buttonRow.style.justifyContent = "flex-end";
-        buttonRow.style.marginBottom = "8px";
-        buttonRow.appendChild(stepLabel);
-        buttonRow.appendChild(addButton);
-        buttonRow.appendChild(removeButton);
-
-        const stepSelect = document.createElement("select");
-        stepSelect.style.marginBottom = "16px";
-        stepSelect.style.width = "100%";
-        stepSelect.value = step.name;
-
-        for (const stepName of Object.keys(stepData)) {
-            const option = document.createElement('option');
-            option.value = stepName;
-            option.text = stepName;
-            if (stepName === step.name) {
-                option.selected = true;
-            }
-            stepSelect.appendChild(option);
-        }
-
-        stepSelect.onchange = event => {
-            const value = event.target.value;
-            optionsState[i] = stepData[value];
-            renderOptions();
-        }
-
-        const inputs = step.inputs.map((input, i) => {
-            if (input.inputType === "checkbox") {
-                return [E("div", {
-                        style: "display: flex; flex-direction: row; align-items: center; margin-bottom: 16px;",
-                    }, [
-                        E("p", {
-                            style: "font-weight: bold; margin-right: 8px;",
-                            textContent: input.text,
-                        }),
-                        E("input", {
+                        optionsState.splice(i, 1);
+                        renderOptions();
+                    },
+                }),
+            ]),
+            E("div", {
+                style: "display: flex; flex-wrap: wrap; gap: 12px 32px;",
+            }, [
+                labelAndInput("Step", E("select", {
+                    value: step.name,
+                    onchange: event => {
+                        const value = event.target.value;
+                        optionsState[i] = stepData[value];
+                        renderOptions();
+                    },
+                }, Object.keys(stepData).map(stepName => {
+                    return E("option", {
+                        value: stepName,
+                        textContent: stepName,
+                        selected: stepName === step.name,
+                    });
+                }))),
+                ...step.inputs.map((input, i) => {
+                    if (input.inputType === "checkbox") {
+                        return labelAndInput(input.text, E("input", {
                             type: input.inputType,
                             id: input.inputId,
-                            style: "margin-right: 8px;",
                             checked: localStorage.getItem(input.inputId) === "true",
                             onchange: event => {
                                 const value = event.target.checked;
                                 localStorage.setItem(input.inputId, value);
                             },
-                        }),
-                    ])];
-            }
+                        }));
+                    }
 
-            const inputLabel = E("p", {
-                style: "font-weight: bold; margin-bottom: 8px;",
-                textContent: input.text,
-            });
-            
-            const isLast = i === step.inputs.length - 1;
-            const inputEle = E("input", {
-                type: input.inputType,
-                id: input.inputId,
-                min: 1,
-                placeholder: input.inputPlaceholder,
-                style: `width: 100%; margin-bottom: ${isLast ? "0" : "16px"};`,
-                value: localStorage.getItem(input.inputId),
-                onchange: event => {
-                    const value = event.target.value;
-                    localStorage.setItem(input.inputId, value);
-                },
-            });
-
-            return [inputLabel, inputEle];
-        });
-
-        div.appendChild(buttonRow);
-        div.appendChild(stepSelect);
-        inputs.forEach(_inputs => {
-            _inputs.forEach(_input => {
-                div.appendChild(_input);
-            });
-        })
-
-        return div;
+                    return labelAndInput(input.text, E("input", {
+                        type: input.inputType,
+                        id: input.inputId,
+                        min: 1,
+                        placeholder: input.inputPlaceholder,
+                        value: localStorage.getItem(input.inputId),
+                        onchange: event => {
+                            const value = event.target.value;
+                            localStorage.setItem(input.inputId, value);
+                        },
+                    }));
+                }),
+            ]),
+        ]);
     }
 
     renderOptions();
