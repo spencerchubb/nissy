@@ -1,0 +1,1 @@
+bool find_xexc(char *rzps, int e, int c);

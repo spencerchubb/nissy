@@ -65,7 +65,6 @@ typedef struct StepData {
     char *value;
 } StepData;
 
-
 typedef struct SolveStep {
     char *name;
     char *shortname;
@@ -115,23 +114,42 @@ int count_bad_edges(int epos) {
 
     free(ep);
 
-    // Multiply by 2 because for every edge not in its slice,
-    // that means there are 2 bad edges.
-    return count * 2;
+    // The number of bad edges is 8 - 2 * the number of slice edges.
+    return 8 - 2 * count;
+}
+
+bool is_digit(char c) {
+    return c >= '0' && c <= '9';
+}
+
+bool is_digit_or_ce(char c) {
+    return is_digit(c) || c == 'c' || c == 'e';
 }
 
 bool find_xexc(char *rzps, int e, int c) {
-    int rzps_len = strlen(rzps);
-    if (rzps_len % 4 != 0) {
-        // Invalid rzps string.
-        // rzps should be combinations of xexc
-        return false;
-    }
+    char edge = e + '0';
+    char corner = c + '0';
+    
+    int len = strlen(rzps);
+    int i = 0;
+    while (i <= len - 4) {
+        char c1 = rzps[i], c2 = rzps[i + 1], c3 = rzps[i + 2], c4 = rzps[i + 3];
 
-    for (int i = 0; i < rzps_len / 4; i++) {
-        if (rzps[i] == e + '0' && rzps[i * 4 + 2] == c + '0') {
+        // Skip if these 4 characters are not the right format.
+        if (!is_digit_or_ce(c1) || !is_digit_or_ce(c2) || !is_digit_or_ce(c3) || !is_digit_or_ce(c4)) {
+            i++;
+            continue;
+        }
+
+        if (c1 == edge && c2 == 'e' && c3 == corner && c4 == 'c') {
             return true;
         }
+
+        if (c1 == corner && c2 == 'c' && c3 == edge && c4 == 'e') {
+            return true;
+        }
+
+        i += 4;
     }
 
     return false;
@@ -142,17 +160,17 @@ bool check_rzp(Cube cube, char *rzps) {
     // 1. At least one of (eofb, eorl, eoud) is 0.
     // 2. One of the other COs matches a user-specified RZP.
 
-    int badCornersUd = count_bad_corners(cube.coud);
-    int badCornersRl = count_bad_corners(cube.corl);
-    int badCornersFb = count_bad_corners(cube.cofb);
+    int cornersUd = count_bad_corners(cube.coud);
+    int cornersRl = count_bad_corners(cube.corl);
+    int cornersFb = count_bad_corners(cube.cofb);
 
-    int badEdgesE = count_bad_edges(cube.epose);
-    int badEdgesM = count_bad_edges(cube.eposm);
-    int badEdgesS = count_bad_edges(cube.eposs);
+    int edgesE = count_bad_edges(cube.epose);
+    int edgesM = count_bad_edges(cube.eposm);
+    int edgesS = count_bad_edges(cube.eposs);
 
-    bool rzpUd = find_xexc(rzps, badEdgesE, badCornersUd);
-    bool rzpRl = find_xexc(rzps, badEdgesM, badCornersRl);
-    bool rzpFb = find_xexc(rzps, badEdgesS, badCornersFb);
+    bool rzpUd = find_xexc(rzps, edgesE, cornersUd);
+    bool rzpRl = find_xexc(rzps, edgesM, cornersRl);
+    bool rzpFb = find_xexc(rzps, edgesS, cornersFb);
 
     if (cube.eofb == 0 && (rzpUd || rzpRl)) {
         return true;
@@ -217,36 +235,6 @@ bool jzp_edges(int epos, bool otherSlice) {
     free(ep);
     return !eSliceEdgeInMSlice;
 }
-
-
-/** Scrambles:
-F B2 L2 D R2 U' R2 U' F2 R2 U2 R' F2 D B D' F L' F' R2
-D2 B' L2 B2 U2 R2 U L2 D R2 U2 L2 F2 B' U' F U2 F2 L D U
-R B2 D2 R2 B2 L' F2 U2 L2 F2 D L2 R F U' R2 D2 F2 L
-U L2 B2 D2 R U B' L' U' B U L2 F2 R2 U D2 B2 D' F2 R2 U' F2
-*/
-
-/** FB EOs:
-F B2 L2 D R2 U' R2 U' F2 R2 U2 R' F2 D B D' F L' F' R2 U' F U D' B
-D2 B' L2 B2 U2 R2 U L2 D R2 U2 L2 F2 B' U' F U2 F2 L U L2 B F' U F
-R B2 D2 R2 B2 L' F2 U2 L2 F2 D L2 R F U' R2 D2 F2 L R U' R' B
-U L2 B2 D2 R U B' L' U' B U L2 F2 R2 U D2 B2 D' F2 R2 U' F2 R' D' B
-*/
-
-/** RL EOs:
-F B2 L2 D R2 U' R2 U' F2 R2 U2 R' F2 D B D' F L' F' R2 L B' R2 D R
-D2 B' L2 B2 U2 R2 U L2 D R2 U2 L2 F2 B' U' F U2 F2
-R B2 D2 R2 B2 L' F2 U2 L2 F2 D L2 R F U' R2 D2 F2 L R U' R' B U L R D' R
-U L2 B2 D2 R U B' L' U' B U L2 F2 R2 U D2 B2 D' F2 R2 U' F2 R' D' B L' B2 U D L
-*/
-
-/** UD EOs:
-F B2 L2 D R2 U' R2 U' F2 R2 U2 R' F2 D B D' F L' F' R D R B' F U
-D2 B' L2 B2 U2 R2 U L2 D R2 U2 L2 F2 B' U' F U2 F2 L D U R B' D F U
-R B2 D2 R2 B2 L' F2 U2 L2 F2 D L2 R F U' R2 D2 F2 U F R' D
-U L2 B2 D2 R U B' L' U' B U L2 F2 R2 U D2 B2 D' F2 R2 U' F2 D R U2 R2 U
-*/
-
 
 bool check_jzp(Cube cube) {
     // Letters 1 & 2: EO axis
