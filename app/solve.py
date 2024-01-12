@@ -5,20 +5,6 @@ from typing import List
 
 nissy = CDLL("./nissy.so")
 
-class SolveOptions(ctypes.Structure):
-    _fields_ = [
-        ("min_moves", ctypes.c_int),
-        ("max_moves", ctypes.c_int),
-        ("max_solutions", ctypes.c_int),
-        ("nthreads", ctypes.c_int),
-        ("optimal", ctypes.c_int),
-        ("nisstype", ctypes.c_int),
-        ("verbose", ctypes.c_int), # c_int for boolean field
-        ("all", ctypes.c_int), # c_int for boolean field
-        ("print_only", ctypes.c_int), # c_int for boolean field
-        ("count", ctypes.c_int), # c_int for boolean field
-    ]
-
 class StepData(ctypes.Structure):
     _fields_ = [
         ("key", ctypes.c_char_p),
