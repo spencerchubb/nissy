@@ -2,7 +2,7 @@ nissy
 nissy.dll
 nissy.so
 __pycache__/
-app.log
+app.db
 log.txt
 
 # Potentially sensitive info

@@ -1,11 +1,26 @@
 from flask import Flask, jsonify, render_template, request
 from scramble import get_scramble
 from solve import solve
-import logging
+import sqlite3
 
-logging.basicConfig(filename='app.log', level=logging.DEBUG)
+class DB:
+    def __init__(self):
+        with sqlite3.connect('app.db') as conn:
+            c = conn.cursor()
+            c.execute('''CREATE TABLE IF NOT EXISTS logs (
+                      id INTEGER PRIMARY KEY AUTOINCREMENT,
+                      timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+                      data TEXT)''')
+
+    def log(self, data):
+        '''data should be str or dict'''
+        data = str(data)
+        with sqlite3.connect('app.db') as conn:
+            c = conn.cursor()
+            c.execute('INSERT INTO logs (data) VALUES (?)', (data,))
 
 app = Flask(__name__)
+db = DB()
 
 @app.route('/', methods=['GET'])
 def index():
@@ -14,9 +29,8 @@ def index():
 @app.route('/nissy_methods', methods=['POST'])
 def nissy_methods():
     body = request.get_json()
-
-    # Print entire body so we have in-depth logs.
-    logging.info(body)
+    # print(body)
+    db.log(body)
 
     if body['method'] == 'scramble':
         scramble = get_scramble(body['scrambleType'])
