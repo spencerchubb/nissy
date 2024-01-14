@@ -410,6 +410,33 @@ SolveOutput *solve_one_step(struct timespec start, Cube cube, char *shortname, S
     return solve(start, cube, step, opts);
 }
 
+/** Example: R U R --> R U R' */
+Alg *complement_alg(Alg *alg) {
+    Alg *comp = new_alg("");
+    copy_alg(alg, comp);
+
+    Move last_inv = inverse_move(comp->move[comp->len - 1]);
+    comp->move[comp->len - 1] = last_inv;
+    return comp;
+}
+
+/** Return an alglist with the original algs and their complements. */
+AlgList *complement_algs(AlgList *algs) {
+    AlgList *comps = new_alglist();
+    for (AlgListNode *i = algs->first; i != NULL; i = i->next) {
+        Alg *alg = i->alg;
+        append_alg(comps, alg);
+
+        // If alg is empty, it doesn't have a complement.
+        if (alg->len == 0) continue;
+
+        Alg *comp = complement_alg(i->alg);
+        append_alg(comps, comp);
+        free_alg(comp);
+    }
+    return comps;
+}
+
 SolveOutput *solve_helper(struct timespec start, Alg *scramble, AlgList *sols, SolveStep *steps, int step_index, int num_steps, int nisstype) {
     if (step_index >= num_steps) {
         // Copy sols so it can be freed.
@@ -463,6 +490,11 @@ SolveOutput *solve_helper(struct timespec start, Alg *scramble, AlgList *sols, S
         cube = apply_alg(alg, cube);
         SolveOutput *solve_output = solve_one_step(start, cube, step.shortname, opts);
 
+        // Check complements unless we are on the last step.
+        if (step_index < num_steps - 1) {
+            solve_output->sols = complement_algs(solve_output->sols);
+        }
+
         for (AlgListNode *j = solve_output->sols->first; j != NULL; j = j->next) {
             Alg *sol = j->alg;
             Alg *combined_sol = new_alg("");
@@ -479,6 +511,38 @@ SolveOutput *solve_helper(struct timespec start, Alg *scramble, AlgList *sols, S
         }
 
         solve_output_free(solve_output);
+
+        //////////////////////
+
+        // if (alg->len == 0) {
+        //     // If alg is empty, don't check the complement.
+        //     continue;
+        // }
+
+        // Alg *complement = complement_alg(alg);
+        // printf("%s | %s\n", alg_to_string(alg), alg_to_string(complement));
+        // cube = apply_alg(scramble, (Cube){0});
+        // cube = apply_alg(complement, cube);
+        // solve_output = solve_one_step(start, cube, step.shortname, opts);
+
+        // for (AlgListNode *j = solve_output->sols->first; j != NULL; j = j->next) {
+        //     Alg *sol = j->alg;
+        //     Alg *combined_sol = new_alg("");
+        //     copy_alg(complement, combined_sol);
+        //     compose_alg(combined_sol, sol);
+        //     printf("complement solution: %s\n", alg_to_string(combined_sol));
+        //     append_alg(new_sols, combined_sol);
+        //     free_alg(combined_sol);
+        // }
+
+        // if (solve_output->error_msg != NULL) {
+        //     free_alglist(new_sols);
+        //     free(opts);
+        //     return solve_output;
+        // }
+
+        // solve_output_free(solve_output);
+        // free_alg(complement);
     }
 
     SolveOutput *so = solve_helper(start, scramble, new_sols, steps, step_index + 1, num_steps, nisstype);

@@ -29,7 +29,6 @@ def index():
 @app.route('/nissy_methods', methods=['POST'])
 def nissy_methods():
     body = request.get_json()
-    # print(body)
     db.log(body)
 
     if body['method'] == 'scramble':
