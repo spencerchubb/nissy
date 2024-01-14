@@ -393,18 +393,6 @@ new_alglist(void)
 	return ret;
 }
 
-Alg *
-on_inverse(Alg *alg)
-{
-	Alg *ret = new_alg("");
-	int i;
-
-	for (i = 0; i < alg->len; i++)
-		append_move(ret, alg->move[i], !alg->inv[i]);
-
-	return ret;
-}
-
 void
 print_alg(Alg *alg, bool l)
 {

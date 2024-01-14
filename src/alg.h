@@ -30,7 +30,6 @@ void        movelist_to_position(Move *ml, int *pos);
 void        moveset_to_list(Moveset ms, Move *lst);
 Alg *       new_alg(char *str);
 AlgList *   new_alglist(void);
-Alg *       on_inverse(Alg *alg);
 void        print_alg(Alg *alg, bool l);
 void        print_alglist(AlgList *al, bool l);
 void        sort_alglist(AlgList *al);
