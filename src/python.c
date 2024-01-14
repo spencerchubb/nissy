@@ -497,6 +497,13 @@ SolveOutput *solve_helper(struct timespec start, Alg *scramble, AlgList *sols, S
 
         for (AlgListNode *j = solve_output->sols->first; j != NULL; j = j->next) {
             Alg *sol = j->alg;
+
+            // If last move of alg and first move of sol are the same face, skip.
+            // When we check the complement, we will get the same alg.
+            if (base_move(alg->move[alg->len - 1]) == base_move(sol->move[0])) {
+                continue;
+            }
+
             Alg *combined_sol = new_alg("");
             copy_alg(alg, combined_sol);
             compose_alg(combined_sol, sol);
@@ -511,38 +518,6 @@ SolveOutput *solve_helper(struct timespec start, Alg *scramble, AlgList *sols, S
         }
 
         solve_output_free(solve_output);
-
-        //////////////////////
-
-        // if (alg->len == 0) {
-        //     // If alg is empty, don't check the complement.
-        //     continue;
-        // }
-
-        // Alg *complement = complement_alg(alg);
-        // printf("%s | %s\n", alg_to_string(alg), alg_to_string(complement));
-        // cube = apply_alg(scramble, (Cube){0});
-        // cube = apply_alg(complement, cube);
-        // solve_output = solve_one_step(start, cube, step.shortname, opts);
-
-        // for (AlgListNode *j = solve_output->sols->first; j != NULL; j = j->next) {
-        //     Alg *sol = j->alg;
-        //     Alg *combined_sol = new_alg("");
-        //     copy_alg(complement, combined_sol);
-        //     compose_alg(combined_sol, sol);
-        //     printf("complement solution: %s\n", alg_to_string(combined_sol));
-        //     append_alg(new_sols, combined_sol);
-        //     free_alg(combined_sol);
-        // }
-
-        // if (solve_output->error_msg != NULL) {
-        //     free_alglist(new_sols);
-        //     free(opts);
-        //     return solve_output;
-        // }
-
-        // solve_output_free(solve_output);
-        // free_alg(complement);
     }
 
     SolveOutput *so = solve_helper(start, scramble, new_sols, steps, step_index + 1, num_steps, nisstype);
