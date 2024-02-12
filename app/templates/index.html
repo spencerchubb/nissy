@@ -470,6 +470,12 @@
                     inputType: "number",
                     inputPlaceholder: "# of Leave Slice solutions",
                 },
+                {
+                    text: "Axis",
+                    inputId: "leave_slice_axis",
+                    inputType: "select",
+                    options: ["DR Axis", "M Axis", "E Axis", "S Axis"],
+                },
             ],
         },
         "Finish": {
@@ -656,6 +662,22 @@
                     });
                 }))),
                 ...step.inputs.map((input, i) => {
+                    if (input.inputType === "select") {
+                        return labelAndInput(input.text, E("select", {
+                            id: input.inputId,
+                            onchange: event => {
+                                const value = event.target.value;
+                                localStorage.setItem(input.inputId, value);
+                            },
+                        }, input.options.map(option => {
+                            return E("option", {
+                                value: option,
+                                textContent: option,
+                                selected: option === localStorage.getItem(input.inputId),
+                            });
+                        })));
+                    }
+
                     if (input.inputType === "checkbox") {
                         return labelAndInput(input.text, E("input", {
                             type: input.inputType,

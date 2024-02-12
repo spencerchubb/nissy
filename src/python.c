@@ -478,6 +478,15 @@ SolveOutput *solve_helper(struct timespec start, Alg *scramble, AlgList *sols, S
         opts->max_solutions = atoi(get_step_value(step, "num_htrs"));
     } else if (strcmp(step_name, "Leave Slice") == 0) {
         opts->max_solutions = atoi(get_step_value(step, "num_leave_slice"));
+
+        char *leave_slice_axis = get_step_value(step, "leave_slice_axis");
+        if (strcmp(leave_slice_axis, "M Axis") == 0) {
+            step.shortname = "drrlslice";
+        } else if (strcmp(leave_slice_axis, "E Axis") == 0) {
+            step.shortname = "drudslice";
+        } else if (strcmp(leave_slice_axis, "S Axis") == 0) {
+            step.shortname = "drfbslice";
+        }
     } else if (strcmp(step_name, "Finish") == 0) {
         opts->max_solutions = atoi(get_step_value(step, "num_finishes"));
     }
