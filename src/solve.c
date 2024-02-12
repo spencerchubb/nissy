@@ -398,6 +398,20 @@ void solve_output_free(SolveOutput *so) {
     free(so);
 }
 
+void
+prepare_step(Step *step, SolveOptions *opts)
+{
+	if (step->final && opts->nisstype != NORMAL) {
+		opts->nisstype = NORMAL;
+	}
+
+	for (int i = 0; i < step->ntables; i++) {
+		genptable(step->tables[i], opts->nthreads);
+		if (step->tables[i]->compact)
+			genptable(step->tables[i]->fallback, opts->nthreads);
+	}
+}
+
 SolveOutput *solve(struct timespec start, Cube cube, Step *step, SolveOptions *opts) {
 	bool ready;
 	int i, d, op, nt;

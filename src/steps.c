@@ -1672,19 +1672,3 @@ reset_estimatedata(EstimateData *ed)
 	ed->inverse_rl = -1;
 	ed->oldret     = -1;
 }
-
-void
-prepare_step(Step *step, SolveOptions *opts)
-{
-	int i;
-
-	if (step->final && opts->nisstype != NORMAL) {
-		opts->nisstype = NORMAL;
-	}
-
-	for (i = 0; i < step->ntables; i++) {
-		genptable(step->tables[i], opts->nthreads);
-		if (step->tables[i]->compact)
-			genptable(step->tables[i]->fallback, opts->nthreads);
-	}
-}
