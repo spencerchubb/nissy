@@ -527,9 +527,10 @@ SolveOutput *solve_helper(struct timespec start, Alg *scramble, AlgList *sols, S
 }
 
 char** python_solve(SolveArgs solveArgs) {
-    // Previously we implemented the timeout in python, but it was not reliable.
-    // Probably has something to do with the Global Interpreter Lock.
-    // So now we do the timeout in C.
+    init_all_movesets();
+	init_symcoord();
+
+    // Start time after initialization because initialization is slow.
     struct timespec start;
     clock_gettime(CLOCK_MONOTONIC, &start);
 
@@ -553,9 +554,6 @@ char** python_solve(SolveArgs solveArgs) {
     // }
 
     Alg *scramble = new_alg(scrambleString);
-
-	init_all_movesets();
-	init_symcoord();
 
     AlgList *sols = new_alglist();
     Alg *empty_alg = new_alg("");
@@ -583,6 +581,10 @@ char** python_solve(SolveArgs solveArgs) {
 
 /* Based on 'scramble_exec' from commands.c */
 char* python_scramble(char *scrtype) {
+    init_all_movesets();
+	init_symcoord();
+
+    // Start time after initialization because initialization is slow.
     struct timespec start;
     clock_gettime(CLOCK_MONOTONIC, &start);
 
@@ -592,9 +594,6 @@ char* python_scramble(char *scrtype) {
 	int i, j, eo, ep, co, cp, a[12];
 	int eparr[12] = { [8] = 8, [9] = 9, [10] = 10, [11] = 11 };
 	uint64_t ui, uj, uk;
-
-	init_all_movesets();
-	init_symcoord();
 
 	srand(time(NULL));
 
