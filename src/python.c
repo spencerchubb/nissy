@@ -385,13 +385,14 @@ SolveOutput *solve_rzp(struct timespec start, Cube cube, SolveOptions *opts) {
     return solve_output_new(sols, NULL);
 }
 
-char *get_step_value(SolveStep step, char *key) {
+// Forcing a defaultValue helps sanitize inputs and avoid segfaults.
+char *get_step_value(SolveStep step, char *key, char *defaultValue) {
     for (int i = 0; i < step.datalen; i++) {
         if (strcmp(step.data[i].key, key) == 0) {
             return step.data[i].value;
         }
     }
-    return NULL;
+    return defaultValue;
 }
 
 SolveOutput *solve_one_step(struct timespec start, Cube cube, char *shortname, SolveOptions *opts) {
@@ -467,19 +468,19 @@ SolveOutput *solve_helper(struct timespec start, Alg *scramble, AlgList *sols, S
 
     // Set options based on step
     if (strcmp(step_name, "EO") == 0) {
-        opts->max_solutions = atoi(get_step_value(step, "num_eos"));
+        opts->max_solutions = atoi(get_step_value(step, "num_eos", "1"));
     } else if (strcmp(step_name, "RZP") == 0) {
-        opts->max_moves = atoi(get_step_value(step, "num_rzp_moves"));
-        opts->rzps = get_step_value(step, "rzps");
-        opts->jzp = strcmp(get_step_value(step, "jzp"), "true") == 0;
+        opts->max_moves = atoi(get_step_value(step, "num_rzp_moves", "2"));
+        opts->rzps = get_step_value(step, "rzps", "4e4c");
+        opts->jzp = strcmp(get_step_value(step, "jzp", "false"), "true") == 0;
     } else if (strcmp(step_name, "DR") == 0) {
-        opts->max_solutions = atoi(get_step_value(step, "num_drs"));
+        opts->max_solutions = atoi(get_step_value(step, "num_drs", "1"));
     } else if (strcmp(step_name, "HTR") == 0) {
-        opts->max_solutions = atoi(get_step_value(step, "num_htrs"));
+        opts->max_solutions = atoi(get_step_value(step, "num_htrs", "1"));
     } else if (strcmp(step_name, "Leave Slice") == 0) {
-        opts->max_solutions = atoi(get_step_value(step, "num_leave_slice"));
+        opts->max_solutions = atoi(get_step_value(step, "num_leave_slice", "1"));
 
-        char *leave_slice_axis = get_step_value(step, "leave_slice_axis");
+        char *leave_slice_axis = get_step_value(step, "leave_slice_axis", "DR Axis");
         if (strcmp(leave_slice_axis, "M Axis") == 0) {
             step.shortname = "drrlslice";
         } else if (strcmp(leave_slice_axis, "E Axis") == 0) {
@@ -488,7 +489,7 @@ SolveOutput *solve_helper(struct timespec start, Alg *scramble, AlgList *sols, S
             step.shortname = "drfbslice";
         }
     } else if (strcmp(step_name, "Finish") == 0) {
-        opts->max_solutions = atoi(get_step_value(step, "num_finishes"));
+        opts->max_solutions = atoi(get_step_value(step, "num_finishes", "1"));
     }
 
     AlgList *new_sols = new_alglist();
