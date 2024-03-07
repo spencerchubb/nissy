@@ -605,7 +605,9 @@ char* python_scramble(char *scrtype) {
 	int eparr[12] = { [8] = 8, [9] = 9, [10] = 10, [11] = 11 };
 	uint64_t ui, uj, uk;
 
-	srand(time(NULL));
+    // Used to be seeded with time in seconds.
+    // Now we seed wih nanoseconds to get more variety.
+	srand(start.tv_nsec);
 
     if (!strcmp(scrtype, "dr")) {
         /* Warning: cube is inconsistent because of side CO  *
