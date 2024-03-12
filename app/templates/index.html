@@ -406,9 +406,13 @@
             inputs: [
                 {
                     text: "Sols",
-                    inputId: "num_eos",
                     inputType: "number",
-                    inputPlaceholder: "# of EO soluions",
+                    inputPlaceholder: "Max EO solutions",
+                },
+                {
+                    text: "Moves",
+                    inputType: "number",
+                    inputPlaceholder: "Max moves for EO",
                 },
             ],
         },
@@ -417,20 +421,22 @@
             shortname: "rzp",
             inputs: [
                 {
-                    text: "Moves",
-                    inputId: "num_rzp_moves",
+                    text: "Sols",
                     inputType: "number",
-                    inputPlaceholder: "# of moves for RZP",
+                    inputPlaceholder: "Max RZP solutions",
+                },
+                {
+                    text: "Moves",
+                    inputType: "number",
+                    inputPlaceholder: "Max moves for RZP",
                 },
                 {
                     text: "RZPs",
-                    inputId: "rzps",
                     inputType: "string",
                     inputPlaceholder: "Enter xexc's. Example: 4e4c2e3c2e4c",
                 },
                 {
                     text: "JZP",
-                    inputId: "jzp",
                     inputType: "checkbox",
                     inputPlaceholder: "",
                 },
@@ -442,9 +448,13 @@
             inputs: [
                 {
                     text: "Sols",
-                    inputId: "num_drs",
                     inputType: "number",
-                    inputPlaceholder: "# of DR solutions",
+                    inputPlaceholder: "Max DR solutions",
+                },
+                {
+                    text: "Moves",
+                    inputType: "number",
+                    inputPlaceholder: "Max moves for DR",
                 },
             ],
         },
@@ -454,9 +464,13 @@
             inputs: [
                 {
                     text: "Sols",
-                    inputId: "num_htrs",
                     inputType: "number",
-                    inputPlaceholder: "# of HTR solutions",
+                    inputPlaceholder: "Max HTR solutions",
+                },
+                {
+                    text: "Moves",
+                    inputType: "number",
+                    inputPlaceholder: "Max moves for HTR",
                 },
             ],
         },
@@ -466,13 +480,16 @@
             inputs: [
                 {
                     text: "Sols",
-                    inputId: "num_leave_slice",
                     inputType: "number",
-                    inputPlaceholder: "# of Leave Slice solutions",
+                    inputPlaceholder: "Max Leave Slice solutions",
+                },
+                {
+                    text: "Moves",
+                    inputType: "number",
+                    inputPlaceholder: "Max moves for Leave Slice",
                 },
                 {
                     text: "Axis",
-                    inputId: "leave_slice_axis",
                     inputType: "select",
                     options: ["DR Axis", "M Axis", "E Axis", "S Axis"],
                 },
@@ -480,15 +497,18 @@
         },
         "Finish": {
             name: "Finish",
-            // We use drfin instead of htrfin so the Finish
-            // step can be used for both DR and HTR.
+            // We use drfin instead of htrfin so Finish can do DR and HTR.
             shortname: "drfin",
             inputs: [
                 {
                     text: "Sols",
-                    inputId: "num_finishes",
                     inputType: "number",
-                    inputPlaceholder: "# of Finishes",
+                    inputPlaceholder: "Max Finishes",
+                },
+                {
+                    text: "Moves",
+                    inputType: "number",
+                    inputPlaceholder: "Max moves for Finish",
                 },
             ],
         },
@@ -515,10 +535,10 @@
     q("#solve-button").onclick = () => {
         const steps = optionsState.map(step => {
             const data = step.inputs.map(input => {
-                const ele = document.getElementById(input.inputId);
+                const ele = document.getElementById(step.shortname + input.text);
                 const value = ele.type === "checkbox" ? ele.checked : ele.value;
                 return {
-                    key: input.inputId,
+                    key: input.text,
                     value: value.toString(),
                 };
             });
@@ -531,6 +551,12 @@
 
         const solutionsList = q("#solutions-list");
         solutionsList.innerHTML = "<p>Loading...</p>";
+        console.log({
+                method: "solve",
+                data: steps,
+                scramble: scrambleInput.value,
+                nisstype: nisstypeInput.value,
+            })
         fetch("/nissy_methods", {
             method: "POST",
             headers: {
@@ -662,18 +688,19 @@
                     });
                 }))),
                 ...step.inputs.map((input, i) => {
+                    const inputId = step.shortname + input.text;
                     if (input.inputType === "select") {
                         return labelAndInput(input.text, E("select", {
-                            id: input.inputId,
+                            id: inputId,
                             onchange: event => {
                                 const value = event.target.value;
-                                localStorage.setItem(input.inputId, value);
+                                localStorage.setItem(inputId, value);
                             },
                         }, input.options.map(option => {
                             return E("option", {
                                 value: option,
                                 textContent: option,
-                                selected: option === localStorage.getItem(input.inputId),
+                                selected: option === localStorage.getItem(inputId),
                             });
                         })));
                     }
@@ -681,24 +708,24 @@
                     if (input.inputType === "checkbox") {
                         return labelAndInput(input.text, E("input", {
                             type: input.inputType,
-                            id: input.inputId,
-                            checked: localStorage.getItem(input.inputId) === "true",
+                            id: inputId,
+                            checked: localStorage.getItem(inputId) === "true",
                             onchange: event => {
                                 const value = event.target.checked;
-                                localStorage.setItem(input.inputId, value);
+                                localStorage.setItem(inputId, value);
                             },
                         }));
                     }
 
                     return labelAndInput(input.text, E("input", {
                         type: input.inputType,
-                        id: input.inputId,
+                        id: inputId,
                         min: 1,
                         placeholder: input.inputPlaceholder,
-                        value: localStorage.getItem(input.inputId),
+                        value: localStorage.getItem(inputId),
                         onchange: event => {
                             const value = event.target.value;
-                            localStorage.setItem(input.inputId, value);
+                            localStorage.setItem(inputId, value);
                         },
                     }));
                 }),

@@ -306,51 +306,90 @@ bool alg_is_redundant_in_algs(Alg *alg, AlgList *algs) {
     return false;
 }
 
-// If we are using recursion, we have to do maxMoves instead of maxSolutions.
-// Otherwise, we will only search deep and not wide.
-void append_rzp_sols(struct timespec start, Alg *sol, AlgList *sols, Cube cube, char *rzps, int maxMoves, bool jzp, Move moves[], int numMoves) {
-    if (maxMoves <= 0 || elapsed_ms(start) > TIME_LIMIT) {
-        return;
-    }
+// Create struct called RzpQueueNode with fields for cube, alg, and depth.
+typedef struct RzpQueueNode {
+    Cube cube;
+    Alg *alg;
+    int depth;
+} RzpQueueNode;
 
-    for (int i = 0; i < numMoves; i++) {
-        // Look at the last two moves to see if this move will be redundant.
-        int len = sol->len;
-        if (len >= 1) {
-            int prev = sol->move[len - 1];
-
-            if (moves_are_same_face(prev, moves[i])) {
-                continue;
-            }
-
-            if (len >= 2
-                && moves_are_opposite_face(prev, moves[i])
-                && moves_are_same_face(sol->move[len - 2], moves[i])) {
-                continue;
-            }
-        }
-
-        Cube newCube = apply_move(moves[i], cube);
-
-        Alg *newSol = new_alg("");
-        copy_alg(sol, newSol);
-        append_move(newSol, moves[i], false);
-
-        bool step_solved = check_rzp(newCube, rzps) || (jzp && check_jzp(newCube));
-        if (step_solved && !alg_is_redundant_in_algs(newSol, sols)) {
-            append_alg(sols, newSol);
-        }
-
-        append_rzp_sols(start, newSol, sols, newCube, rzps, maxMoves - 1, jzp, moves, numMoves);
-
-        free_alg(newSol);
-    }
+int max(int a, int b) {
+    return a > b ? a : b;
 }
 
-// Given a cube, return all RZP solutions up to maxMoves.
+// Solve RZP on one axis. Append the solutions to sols.
+void solve_rzp_on_axis(struct timespec start, AlgList *sols, Cube cube, char *rzps, int maxMoves, int maxSols, bool jzp, Move moves[], int numMoves) {
+    int queueCap = max(32, sols->len);
+    struct RzpQueueNode *queue = malloc(queueCap * sizeof(RzpQueueNode));
+    queue[0] = (struct RzpQueueNode){cube, new_alg(""), 0};
+
+    int queueIndex = 0;
+    int queueLen = 1;
+    int depth = 0;
+
+    while (true) {
+        RzpQueueNode node = queue[queueIndex];
+        queueIndex++;
+
+        if (node.depth > depth) {
+            depth++;
+        }
+
+        Cube cube = node.cube; // Breaks without this line for some reason?
+        bool step_solved = check_rzp(cube, rzps) || (jzp && check_jzp(cube));
+        if (step_solved && !alg_is_redundant_in_algs(node.alg, sols)) {
+            append_alg(sols, node.alg);
+        }
+
+        // Check for stopping condition AFTER checking if step is solved.
+        // This allows the user to set 0 sols or 0 moves.
+        if (depth >= maxMoves || sols->len >= maxSols || queueLen == 0 || elapsed_ms(start) > TIME_LIMIT) {
+            break;
+        }
+
+        for (int i = 0; i < numMoves; i++) {
+            // Look at the last two moves to see if this move will be redundant.
+            int len = node.alg->len;
+            if (len >= 1) {
+                int prev = node.alg->move[len - 1];
+
+                if (moves_are_same_face(prev, moves[i])) {
+                    continue;
+                }
+
+                if (len >= 2
+                    && moves_are_opposite_face(prev, moves[i])
+                    && moves_are_same_face(node.alg->move[len - 2], moves[i])) {
+                    continue;
+                }
+            }
+
+            Cube newCube = apply_move(moves[i], cube);
+
+            Alg *newAlg = new_alg("");
+            copy_alg(node.alg, newAlg);
+            append_move(newAlg, moves[i], false);
+
+            if (queueLen == queueCap) {
+                queueCap *= 2;
+                queue = realloc(queue, queueCap * sizeof(RzpQueueNode));
+            }
+            
+            queue[queueLen] = (struct RzpQueueNode){newCube, newAlg, depth + 1};
+            queueLen++;
+        }
+    }
+
+    for (int i = 0; i < queueLen; i++) {
+        free_alg(queue[i].alg);
+    }
+    free(queue);
+}
+
 SolveOutput *solve_rzp(struct timespec start, Cube cube, SolveOptions *opts) {
     char *rzps = opts->rzps;
     int maxMoves = opts->max_moves;
+    int maxSols = opts->max_solutions;
     bool jzp = opts->jzp;
 
     AlgList *sols = new_alglist();
@@ -368,17 +407,17 @@ SolveOutput *solve_rzp(struct timespec start, Cube cube, SolveOptions *opts) {
     Alg *sol = new_alg("");
     if (eofb_solved) {
         Move moves[] = {U, U2, U3, D, D2, D3, R, R2, R3, L, L2, L3, F2, B2};
-        append_rzp_sols(start, sol, sols, cube, rzps, maxMoves, jzp, moves, 14);
+        solve_rzp_on_axis(start, sols, cube, rzps, maxMoves, maxSols, jzp, moves, 14);
     }
 
     if (eorl_solved) {
         Move moves[] = {U, U2, U3, D, D2, D3, F, F2, F3, B, B2, B3, R2, L2};
-        append_rzp_sols(start, sol, sols, cube, rzps, maxMoves, jzp, moves, 14);
+        solve_rzp_on_axis(start, sols, cube, rzps, maxMoves, maxSols, jzp, moves, 14);
     }
 
     if (eoud_solved) {
         Move moves[] = {F, F2, F3, B, B2, B3, R, R2, R3, L, L2, L3, U2, D2};
-        append_rzp_sols(start, sol, sols, cube, rzps, maxMoves, jzp, moves, 14);
+        solve_rzp_on_axis(start, sols, cube, rzps, maxMoves, maxSols, jzp, moves, 14);
     }
 
     free_alg(sol);
@@ -438,6 +477,10 @@ AlgList *complement_algs(AlgList *algs) {
     return comps;
 }
 
+bool empty_str(char *str) {
+    return str[0] == '\0';
+}
+
 SolveOutput *solve_helper(struct timespec start, Alg *scramble, AlgList *sols, SolveStep *steps, int step_index, int num_steps, int nisstype) {
     if (step_index >= num_steps) {
         // Copy sols so it can be freed.
@@ -456,8 +499,6 @@ SolveOutput *solve_helper(struct timespec start, Alg *scramble, AlgList *sols, S
 
     SolveOptions *opts = malloc(sizeof(SolveOptions));
     opts->min_moves = 0;
-    opts->max_moves = 20;
-    opts->max_solutions = 10000; // A large number
     opts->nthreads = 1;
     opts->optimal = -1; // Allow suboptimal solutions
     opts->nisstype = nisstype;
@@ -466,20 +507,24 @@ SolveOutput *solve_helper(struct timespec start, Alg *scramble, AlgList *sols, S
     opts->print_number = 0;
     opts->count_only = 0;
 
-    // Set options based on step
-    if (strcmp(step_name, "EO") == 0) {
-        opts->max_solutions = atoi(get_step_value(step, "num_eos", "1"));
-    } else if (strcmp(step_name, "RZP") == 0) {
-        opts->max_moves = atoi(get_step_value(step, "num_rzp_moves", "2"));
+    char *sols_value = get_step_value(step, "Sols", "1000");
+    char *moves_value = get_step_value(step, "Moves", "1000");
+    if (empty_str(sols_value)) sols_value = "1000";
+    if (empty_str(moves_value)) moves_value = "1000";
+    opts->max_solutions = atoi(sols_value);
+    opts->max_moves = atoi(moves_value);
+
+    if (opts->max_solutions == 1000 && opts->max_moves == 1000) {
+        char *msg = malloc(100);
+        sprintf(msg, "Error: Step %s has no Sols or Moves\n", step_name);
+        return solve_output_new(new_alglist(), msg);
+    }
+
+    // Set options for specific steps
+    if (strcmp(step_name, "RZP") == 0) {
         opts->rzps = get_step_value(step, "rzps", "4e4c");
         opts->jzp = strcmp(get_step_value(step, "jzp", "false"), "true") == 0;
-    } else if (strcmp(step_name, "DR") == 0) {
-        opts->max_solutions = atoi(get_step_value(step, "num_drs", "1"));
-    } else if (strcmp(step_name, "HTR") == 0) {
-        opts->max_solutions = atoi(get_step_value(step, "num_htrs", "1"));
     } else if (strcmp(step_name, "Leave Slice") == 0) {
-        opts->max_solutions = atoi(get_step_value(step, "num_leave_slice", "1"));
-
         char *leave_slice_axis = get_step_value(step, "leave_slice_axis", "DR Axis");
         if (strcmp(leave_slice_axis, "M Axis") == 0) {
             step.shortname = "drrlslice";
@@ -488,8 +533,6 @@ SolveOutput *solve_helper(struct timespec start, Alg *scramble, AlgList *sols, S
         } else if (strcmp(leave_slice_axis, "S Axis") == 0) {
             step.shortname = "drfbslice";
         }
-    } else if (strcmp(step_name, "Finish") == 0) {
-        opts->max_solutions = atoi(get_step_value(step, "num_finishes", "1"));
     }
 
     AlgList *new_sols = new_alglist();
