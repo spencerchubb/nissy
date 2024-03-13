@@ -707,15 +707,18 @@ void cleanwhitespaces(char *line) {
 			*i = ' ';
 }
 
-/* This function assumes that **v is large enough */
-int parseline(char *line, char **v) {
+/* Parse tokens from line into v, and stop at maxtokens. Return number of tokens. */
+int parseline(char *line, char **v, int maxtokens) {
 	char *t;
 	int n = 0;
 	
 	cleanwhitespaces(line);
 
-	for (t = strtok(line, " "); t != NULL; t = strtok(NULL, " "))
+	for (t = strtok(line, " "); t != NULL; t = strtok(NULL, " ")) {
 		strcpy(v[n++], t);
+        if (n == maxtokens)
+            break;
+    }
 
 	return n;
 }
@@ -754,17 +757,13 @@ char* python_shell(char *line) {
     clock_gettime(CLOCK_MONOTONIC, &start);
 
 	int i, shell_argc;
-	// char line[MAXLINELEN], **shell_argv;
     char **shell_argv;
 
 	shell_argv = malloc(MAXNTOKENS * sizeof(char *));
 	for (i = 0; i < MAXNTOKENS; i++)
 		shell_argv[i] = malloc((MAXTOKENLEN+1) * sizeof(char));
 
-	// fprintf(stderr, "Welcome to Nissy "VERSION".\nType \"commands\" for a list of commands.\n");
-    // TODO show this message on client-side
-
-    shell_argc = parseline(line, shell_argv);
+    shell_argc = parseline(line, shell_argv, MAXTOKENLEN);
 
     char *output = exec_args(start, shell_argc, shell_argv);
 
