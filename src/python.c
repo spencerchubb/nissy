@@ -695,8 +695,7 @@ char* python_scramble(char *scrtype) {
     return alg_string;
 }
 
-#define MAXLINELEN          10000
-#define MAXTOKENLEN         255
+#define MAXTOKENLEN         50
 #define MAXNTOKENS          255
 
 void cleanwhitespaces(char *line) {
@@ -708,14 +707,18 @@ void cleanwhitespaces(char *line) {
 }
 
 /* Parse tokens from line into v, and stop at maxtokens. Return number of tokens. */
-int parseline(char *line, char **v, int maxtokens) {
+int parseline(char *line, char **v, int maxtokens, int maxtokenlen) {
 	char *t;
 	int n = 0;
 	
 	cleanwhitespaces(line);
 
 	for (t = strtok(line, " "); t != NULL; t = strtok(NULL, " ")) {
-		strcpy(v[n++], t);
+        // Truncate token if it's too long.
+        if (strlen(t) > maxtokenlen) {
+            t[maxtokenlen-1] = 0;
+        }
+        strcpy(v[n++], t);
         if (n == maxtokens)
             break;
     }
@@ -725,7 +728,6 @@ int parseline(char *line, char **v, int maxtokens) {
 
 char* exec_args(struct timespec start, int c, char **v) {
 	int i;
-	char line[MAXLINELEN];
 	Command *cmd = NULL;
 	CommandArgs *args;
 	Alg *scramble;
@@ -763,7 +765,7 @@ char* python_shell(char *line) {
 	for (i = 0; i < MAXNTOKENS; i++)
 		shell_argv[i] = malloc((MAXTOKENLEN+1) * sizeof(char));
 
-    shell_argc = parseline(line, shell_argv, MAXTOKENLEN);
+    shell_argc = parseline(line, shell_argv, MAXNTOKENS, MAXTOKENLEN);
 
     char *output = exec_args(start, shell_argc, shell_argv);
 
