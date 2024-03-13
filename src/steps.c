@@ -1067,15 +1067,16 @@ htrfin_htr = {
 };
 
 Step *steps[] = {
-	&optimal_HTM, /* first is default */
-	&optimal_light_HTM,
+    // Optimal solvers not available because the server isn't big enough for the tables.
+	// &optimal_HTM,
+	// &optimal_light_HTM,
 
-	&eofin_eo,
-	&eofbfin_eofb,
-	&eorlfin_eorl,
-	&eoudfin_eoud,
+	// &eofin_eo,
+	// &eofbfin_eofb,
+	// &eorlfin_eorl,
+	// &eoudfin_eoud,
 
-	&eoany_HTM,
+	&eoany_HTM, /* first is default */
 	&eofb_HTM,
 	&eorl_HTM,
 	&eoud_HTM,
