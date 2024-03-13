@@ -1,5 +1,6 @@
 #include "alg.h"
-#include "solve.h"
+#include "commands.h"
+// #include "solve.h" TODO is this needed?
 
 /* Functions that are designed to be called in python */
 
@@ -10,54 +11,6 @@ Step* getStep(char* stepName) {
         }
     }
     return NULL;
-}
-
-/* Similar to print_alg defined in alg.c except this returns a string */
-char* alg_to_string(Alg *alg) {
-    char *result = malloc(1000); // Adjust the size as needed
-    char fill[4];
-    int i;
-    bool niss = false;
-
-    result[0] = '\0'; // Initialize result string
-
-    for (i = 0; i < alg->len; i++) {
-        if (!niss && alg->inv[i])
-            strcpy(fill, i == 0 ? "(" : " (");
-        if (niss && !alg->inv[i])
-            strcpy(fill, ") ");
-        if (niss == alg->inv[i])
-            strcpy(fill, i == 0 ? "" : " ");
-
-        strcat(result, fill);
-        strcat(result, move_string(alg->move[i]));
-
-        niss = alg->inv[i];
-    }
-
-    if (niss)
-        strcat(result, ")");
-
-    char alg_len[5];
-    sprintf(alg_len, " (%d)", alg->len);
-    strcat(result, alg_len);
-
-    return result;
-}
-
-/* Similar to print_alglist defined in alg.c except it returns a list of strings */
-char** alglist_to_strings(AlgList *alglist) {
-    char **result = malloc((alglist->len + 1) * sizeof(char*)); // Adjust the size as needed
-
-    int resultLen = 0;
-    for (AlgListNode *i = alglist->first; i != NULL; i = i->next, resultLen++) {
-        char *alg_string = alg_to_string(i->alg);
-        result[resultLen] = alg_string;
-    }
-
-    result[resultLen] = NULL; // Add NULL to the end of the array
-
-    return result;
 }
 
 typedef struct StepData {
@@ -740,6 +693,86 @@ char* python_scramble(char *scrtype) {
     char *alg_string = alg_to_string(scr);
     free_alg(scr);
     return alg_string;
+}
+
+#define MAXLINELEN          10000
+#define MAXTOKENLEN         255
+#define MAXNTOKENS          255
+
+void cleanwhitespaces(char *line) {
+	char *i;
+
+	for (i = line; *i != 0; i++)
+		if (*i == '\t' || *i == '\n')
+			*i = ' ';
+}
+
+/* This function assumes that **v is large enough */
+int parseline(char *line, char **v) {
+	char *t;
+	int n = 0;
+	
+	cleanwhitespaces(line);
+
+	for (t = strtok(line, " "); t != NULL; t = strtok(NULL, " "))
+		strcpy(v[n++], t);
+
+	return n;
+}
+
+char* exec_args(struct timespec start, int c, char **v) {
+	int i;
+	char line[MAXLINELEN];
+	Command *cmd = NULL;
+	CommandArgs *args;
+	Alg *scramble;
+
+	for (i = 0; commands[i] != NULL; i++)
+		if (!strcmp(v[0], commands[i]->name))
+			cmd = commands[i];
+
+	if (cmd == NULL) {
+        char *msg = malloc(100);
+        sprintf(msg, "%s: command not found\n", v[0]);
+        return msg;
+	}
+
+	args = cmd->parse_args(c-1, &v[1]);
+    args->start = start;
+	if (!args->success) {
+        char *msg = malloc(100);
+        sprintf(msg, "usage: %s\n", cmd->usage);
+        free_args(args);
+        return msg;
+	}
+
+	return cmd->exec(args);
+}
+
+char* python_shell(char *line) {
+    struct timespec start;
+    clock_gettime(CLOCK_MONOTONIC, &start);
+
+	int i, shell_argc;
+	// char line[MAXLINELEN], **shell_argv;
+    char **shell_argv;
+
+	shell_argv = malloc(MAXNTOKENS * sizeof(char *));
+	for (i = 0; i < MAXNTOKENS; i++)
+		shell_argv[i] = malloc((MAXTOKENLEN+1) * sizeof(char));
+
+	// fprintf(stderr, "Welcome to Nissy "VERSION".\nType \"commands\" for a list of commands.\n");
+    // TODO show this message on client-side
+
+    shell_argc = parseline(line, shell_argv);
+
+    char *output = exec_args(start, shell_argc, shell_argv);
+
+	for (i = 0; i < MAXNTOKENS; i++)
+		free(shell_argv[i]);
+	free(shell_argv);
+
+    return output;
 }
 
 ////////// For testing with valgrind //////////

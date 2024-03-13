@@ -105,7 +105,7 @@ typedef uint64_t             (*CoordMover)       (Move, uint64_t);
 typedef uint64_t             (*CoordTransformer) (Trans, uint64_t);
 typedef int                  (*Estimator)        (DfsArg *);
 typedef bool                 (*Validator)        (Alg *);
-typedef void                 (*Exec)             (CommandArgs *);
+typedef char*                (*Exec)             (CommandArgs *);
 typedef uint64_t             (*Indexer)          (Cube);
 typedef CommandArgs *        (*ArgParser)        (int, char **);
 typedef int                  (*TransDetector)    (Cube, Trans *);
@@ -169,6 +169,7 @@ commandargs
 	bool                      scrstdin;
 	bool                      header;
 	PruneData *               pd;
+    struct timespec           start;
 };
 
 struct

@@ -1,14 +1,12 @@
 import ctypes
-from ctypes import CDLL
+from nissy_c_bridge import nissy
 
-nissy = CDLL("./nissy.so")
-
-def get_scramble(type):
+def get_scramble(scramble_type):
     '''
-    type: string
+    scramble_type: string
     '''
     nissy.python_scramble.argtypes = [ctypes.c_char_p]
     nissy.python_scramble.restype = ctypes.c_char_p
 
-    result = nissy.python_scramble(type.encode())
+    result = nissy.python_scramble(scramble_type.encode())
     return result.decode("utf-8")

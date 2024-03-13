@@ -1,5 +1,6 @@
 from flask import Flask, jsonify, render_template, request
 from scramble import get_scramble
+from shell import get_shell_result
 from solve import solve
 import sqlite3
 
@@ -34,6 +35,9 @@ def nissy_methods():
     if body['method'] == 'scramble':
         scramble = get_scramble(body['scrambleType'])
         return { 'scramble': scramble }
+    elif body['method'] == 'shell':
+        result = get_shell_result(body['command'])
+        return { 'result': result }
     elif body['method'] == 'solve':
         return solve(body)
     

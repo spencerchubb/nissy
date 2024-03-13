@@ -44,6 +44,21 @@
             width: 100%;
             margin: 48px 0;
         }
+
+        #shell-input {
+            font-family: "Courier New";
+            width: 100%;
+        }
+
+        #shell-output {
+            font-family: "Courier New";
+            background: var(--gray-900);
+            border: solid 1px var(--gray-500);
+            padding: 8px;
+            white-space: break-spaces;
+            max-height: 400px;
+            overflow-y: auto;
+        }
     </style>
 
     <!-- CubingApp styles -->
@@ -350,6 +365,13 @@
             <button id="scramble-button">Scramble</button>
         </div>
         <p id="scramble-text" style="margin-top: 1rem;">{{ scramble }}</p>
+        <div class="divider"></div>
+        <p id="shell-output">This is a nissy shell for advanced users.&NewLine;Enter "commands" for a list of commands.&NewLine;</p>
+        <input
+            type="text"
+            id="shell-input"
+            placeholder="Enter shell command"
+        />
         <div class="about-div">
             <style>
                 .about-div h2 {
@@ -600,6 +622,31 @@
             .then(json => {
                 const scramble = json.scramble;
                 scrambleText.textContent = scramble;
+            });
+    }
+
+    const shellInput = q("#shell-input");
+    const shellOutput = q("#shell-output");
+    shellInput.onkeyup = event => {
+        if (event.key !== "Enter") return;
+
+        fetch("/nissy_methods", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                method: "shell",
+                command: event.target.value,
+            }),
+        })
+            .then(res => res.json())
+            .then(json => {
+                shellOutput.textContent += json.result;
+                shellInput.value = "";
+
+                // Scroll to bottom of shell output
+                shellOutput.scrollTop = shellOutput.scrollHeight;
             });
     }
 

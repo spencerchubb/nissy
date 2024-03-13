@@ -1,9 +1,5 @@
 import ctypes
-from ctypes import CDLL
-import re
-from typing import List
-
-nissy = CDLL("./nissy.so")
+from nissy_c_bridge import nissy
 
 class StepData(ctypes.Structure):
     _fields_ = [
