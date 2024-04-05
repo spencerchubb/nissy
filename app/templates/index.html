@@ -573,23 +573,18 @@
 
         const solutionsList = q("#solutions-list");
         solutionsList.innerHTML = "<p>Loading...</p>";
-        console.log({
-                method: "solve",
-                data: steps,
-                scramble: scrambleInput.value,
-                nisstype: nisstypeInput.value,
-            })
+        const body = {
+            method: "solve",
+            data: steps,
+            scramble: scrambleInput.value,
+            nisstype: nisstypeInput.value,
+        };
         fetch("/nissy_methods", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
             },
-            body: JSON.stringify({
-                method: "solve",
-                data: steps,
-                scramble: scrambleInput.value,
-                nisstype: nisstypeInput.value,
-            }),
+            body: JSON.stringify(body),
         })
             .then(res => res.json())
             .then(solutions => {

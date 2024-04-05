@@ -383,13 +383,15 @@ solve_exec(CommandArgs *args)
     } else {
         sort_alglist(solve_output->sols);
         char **strings = alglist_to_strings(solve_output->sols);
-        int memory_needed = 0;
+        int memory_needed = 1; // Need 1 byte the null terminator
+
+        // Add length of each string and 1 byte for newline
         for (int i = 0; i < solve_output->sols->len; i++)
             memory_needed += strlen(strings[i]) + 1;
+
         char *output = malloc(memory_needed * sizeof(char));
         output[0] = '\0';  // Initialize output as an empty string
         for (int i = 0; i < solve_output->sols->len; i++) {
-            // printf("%s\n", strings[i]);
             strcat(output, strings[i]);
             strcat(output, "\n");
             free(strings[i]);
