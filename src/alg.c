@@ -368,7 +368,7 @@ new_alg(char *str)
 		}
 
 		if (!move_read) {
-			free(alg);
+            free_alg(alg);
 			return new_alg("");
 		}
 	}

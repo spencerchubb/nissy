@@ -498,7 +498,9 @@ SolveOutput *solve_helper(struct timespec start, Alg *scramble, AlgList *sols, S
 
         // Check complements unless we are on the last step.
         if (step_index < num_steps - 1) {
-            solve_output->sols = complement_algs(solve_output->sols);
+            AlgList *solution_complements = complement_algs(solve_output->sols);
+            free_alglist(solve_output->sols);
+            solve_output->sols = solution_complements;
         }
 
         for (AlgListNode *j = solve_output->sols->first; j != NULL; j = j->next) {
@@ -564,7 +566,6 @@ char** python_solve(SolveArgs solveArgs) {
     AlgList *sols = new_alglist();
     Alg *empty_alg = new_alg("");
     append_alg(sols, empty_alg); // Add empty alg so the for loop works
-    free_alg(empty_alg);
     SolveOutput *solve_output = solve_helper(start, scramble, sols, steps, 0, num_steps, nisstype);
 
     char **strings;
@@ -579,6 +580,7 @@ char** python_solve(SolveArgs solveArgs) {
     }
 
     free_alg(scramble);
+    free_alg(empty_alg);
     free_alglist(sols);
     solve_output_free(solve_output);
 
@@ -777,92 +779,92 @@ char* python_shell(char *line) {
 }
 
 ////////// For testing with valgrind //////////
-// int main(int argc, char *argv[]) {
-//     char *scrtype = "normal";
-//     char *scramble = python_scramble(scrtype);
+int main(int argc, char *argv[]) {
+    char *scrtype = "normal";
+    char *scramble = python_scramble(scrtype);
 
-//     // Remove the length from scramble string.
-//     scramble[strlen(scramble) - 5] = '\0';
-//     printf("Scramble: %s\n", scramble);
+    // Remove the length from scramble string.
+    scramble[strlen(scramble) - 5] = '\0';
+    printf("Scramble: %s\n", scramble);
 
-//     SolveArgs solve_args = {
-//         .steps = (struct SolveStep[]) {
-//             {
-//                 .name = "EO",
-//                 .shortname = "eo",
-//                 .data = (struct StepData[]) {
-//                     {
-//                         .key = "num_eos",
-//                         .value = "10"
-//                     }
-//                 },
-//                 .datalen = 1
-//             },
-//             {
-//                 .name = "RZP",
-//                 .shortname = "rzp",
-//                 .data = (struct StepData[]) {
-//                     {
-//                         .key = "num_rzp_moves",
-//                         .value = "3"
-//                     },
-//                     {
-//                         .key = "rzps",
-//                         .value = "xexc"
-//                     },
-//                     {
-//                         .key = "jzp",
-//                         .value = "true"
-//                     }
-//                 },
-//                 .datalen = 3
-//             },
-//             {
-//                 .name = "DR",
-//                 .shortname = "dr",
-//                 .data = (struct StepData[]) {
-//                     {
-//                         .key = "num_drs",
-//                         .value = "1"
-//                     }
-//                 },
-//                 .datalen = 1
-//             },
-//             {
-//                 .name = "HTR",
-//                 .shortname = "htr",
-//                 .data = (struct StepData[]) {
-//                     {
-//                         .key = "num_htrs",
-//                         .value = "1"
-//                     }
-//                 },
-//                 .datalen = 1
-//             },
-//             {
-//                 .name = "Finish",
-//                 .shortname = "drfin",
-//                 .data = (struct StepData[]) {
-//                     {
-//                         .key = "num_finishes",
-//                         .value = "1"
-//                     }
-//                 },
-//                 .datalen = 1
-//             }
-//         },
-//         .num_steps = 5,
-//         .scramble = scramble,
-//         .nisstype = 1
-//     };
-//     char **sols = python_solve(solve_args);
+    SolveArgs solve_args = {
+        .steps = (struct SolveStep[]) {
+            {
+                .name = "EO",
+                .shortname = "eo",
+                .data = (struct StepData[]) {
+                    {
+                        .key = "Sols",
+                        .value = "10"
+                    }
+                },
+                .datalen = 1
+            },
+            {
+                .name = "RZP",
+                .shortname = "rzp",
+                .data = (struct StepData[]) {
+                    {
+                        .key = "Moves",
+                        .value = "3"
+                    },
+                    {
+                        .key = "rzps",
+                        .value = "xexc"
+                    },
+                    {
+                        .key = "jzp",
+                        .value = "true"
+                    }
+                },
+                .datalen = 3
+            },
+            {
+                .name = "DR",
+                .shortname = "dr",
+                .data = (struct StepData[]) {
+                    {
+                        .key = "Sols",
+                        .value = "1"
+                    }
+                },
+                .datalen = 1
+            },
+            {
+                .name = "HTR",
+                .shortname = "htr",
+                .data = (struct StepData[]) {
+                    {
+                        .key = "Sols",
+                        .value = "1"
+                    }
+                },
+                .datalen = 1
+            },
+            {
+                .name = "Finish",
+                .shortname = "drfin",
+                .data = (struct StepData[]) {
+                    {
+                        .key = "Sols",
+                        .value = "1"
+                    }
+                },
+                .datalen = 1
+            }
+        },
+        .num_steps = 1,
+        .scramble = scramble,
+        .nisstype = 1
+    };
+    char **sols = python_solve(solve_args);
 
-//     free(scramble);
-//     for (int i = 0; sols[i] != NULL; i++) {
-//         printf("%s\n", sols[i]);
-//         free(sols[i]);
-//     }
-//     free(sols);
+    free(scramble);
+    for (int i = 0; sols[i] != NULL; i++) {
+        printf("%s\n", sols[i]);
+        free(sols[i]);
+    }
+    free(sols);
 
-//     return 0;
-// }
+    return 0;
+}
