@@ -779,92 +779,92 @@ char* python_shell(char *line) {
 }
 
 ////////// For testing with valgrind //////////
-int main(int argc, char *argv[]) {
-    char *scrtype = "normal";
-    char *scramble = python_scramble(scrtype);
+// int main(int argc, char *argv[]) {
+//     char *scrtype = "normal";
+//     char *scramble = python_scramble(scrtype);
 
-    // Remove the length from scramble string.
-    scramble[strlen(scramble) - 5] = '\0';
-    printf("Scramble: %s\n", scramble);
+//     // Remove the length from scramble string.
+//     scramble[strlen(scramble) - 5] = '\0';
+//     printf("Scramble: %s\n", scramble);
 
-    SolveArgs solve_args = {
-        .steps = (struct SolveStep[]) {
-            {
-                .name = "EO",
-                .shortname = "eo",
-                .data = (struct StepData[]) {
-                    {
-                        .key = "Sols",
-                        .value = "10"
-                    }
-                },
-                .datalen = 1
-            },
-            {
-                .name = "RZP",
-                .shortname = "rzp",
-                .data = (struct StepData[]) {
-                    {
-                        .key = "Moves",
-                        .value = "3"
-                    },
-                    {
-                        .key = "rzps",
-                        .value = "xexc"
-                    },
-                    {
-                        .key = "jzp",
-                        .value = "true"
-                    }
-                },
-                .datalen = 3
-            },
-            {
-                .name = "DR",
-                .shortname = "dr",
-                .data = (struct StepData[]) {
-                    {
-                        .key = "Sols",
-                        .value = "1"
-                    }
-                },
-                .datalen = 1
-            },
-            {
-                .name = "HTR",
-                .shortname = "htr",
-                .data = (struct StepData[]) {
-                    {
-                        .key = "Sols",
-                        .value = "1"
-                    }
-                },
-                .datalen = 1
-            },
-            {
-                .name = "Finish",
-                .shortname = "drfin",
-                .data = (struct StepData[]) {
-                    {
-                        .key = "Sols",
-                        .value = "1"
-                    }
-                },
-                .datalen = 1
-            }
-        },
-        .num_steps = 1,
-        .scramble = scramble,
-        .nisstype = 1
-    };
-    char **sols = python_solve(solve_args);
+//     SolveArgs solve_args = {
+//         .steps = (struct SolveStep[]) {
+//             {
+//                 .name = "EO",
+//                 .shortname = "eo",
+//                 .data = (struct StepData[]) {
+//                     {
+//                         .key = "Sols",
+//                         .value = "10"
+//                     }
+//                 },
+//                 .datalen = 1
+//             },
+//             {
+//                 .name = "RZP",
+//                 .shortname = "rzp",
+//                 .data = (struct StepData[]) {
+//                     {
+//                         .key = "Moves",
+//                         .value = "3"
+//                     },
+//                     {
+//                         .key = "rzps",
+//                         .value = "xexc"
+//                     },
+//                     {
+//                         .key = "jzp",
+//                         .value = "true"
+//                     }
+//                 },
+//                 .datalen = 3
+//             },
+//             {
+//                 .name = "DR",
+//                 .shortname = "dr",
+//                 .data = (struct StepData[]) {
+//                     {
+//                         .key = "Sols",
+//                         .value = "1"
+//                     }
+//                 },
+//                 .datalen = 1
+//             },
+//             {
+//                 .name = "HTR",
+//                 .shortname = "htr",
+//                 .data = (struct StepData[]) {
+//                     {
+//                         .key = "Sols",
+//                         .value = "1"
+//                     }
+//                 },
+//                 .datalen = 1
+//             },
+//             {
+//                 .name = "Finish",
+//                 .shortname = "drfin",
+//                 .data = (struct StepData[]) {
+//                     {
+//                         .key = "Sols",
+//                         .value = "1"
+//                     }
+//                 },
+//                 .datalen = 1
+//             }
+//         },
+//         .num_steps = 1,
+//         .scramble = scramble,
+//         .nisstype = 1
+//     };
+//     char **sols = python_solve(solve_args);
 
-    free(scramble);
-    for (int i = 0; sols[i] != NULL; i++) {
-        printf("%s\n", sols[i]);
-        free(sols[i]);
-    }
-    free(sols);
+//     free(scramble);
+//     for (int i = 0; sols[i] != NULL; i++) {
+//         printf("%s\n", sols[i]);
+//         free(sols[i]);
+//     }
+//     free(sols);
 
-    return 0;
-}
+//     return 0;
+// }
