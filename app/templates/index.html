@@ -22,6 +22,11 @@
             padding: 16px 16px 64px 16px;
         }
 
+        select {
+            /* Prevent from going past page if text is too long. */
+            min-width: 0;
+        }
+
         .form {
             display: grid;
             grid-template-columns: auto 1fr;
@@ -291,9 +296,9 @@
         }
 
         let nisstypes = {
-            "Normal": 0,
-            "Linear": 1,
-            "Full Niss": 2,
+            "No switch (Fastest)": 0,
+            "Switch between steps (Pretty fast)": 1,
+            "Switch between moves (Slowest)": 2,
         };
 
         let scrambleTypes = [
@@ -311,14 +316,20 @@
             const scrambleTypeSelect = q('[name="scramble_type"]');
 
             // Load and populate nisstype select options
+            const savedNissType = localStorage.getItem('nisstype') ?? Object.keys(nisstypes)[0];
             for (const nisstypeKey in nisstypes) {
                 const option = document.createElement('option');
                 option.value = nisstypes[nisstypeKey];
                 option.text = nisstypeKey;
+
+                if (nisstypeKey === savedNissType) {
+                    option.selected = true;
+                }
+
                 nisstypeSelect.appendChild(option);
             }
-            const savedNissType = localStorage.getItem('nisstype') ?? Object.keys(nisstypes)[0];
             nisstypeSelect.value = savedNissType;
+
 
             // Load and populate scramble_type select options
             for (const scrambleType of scrambleTypes) {
